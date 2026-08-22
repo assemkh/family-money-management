@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(11);
+select plan(13);
 
 select results_eq(
   $$
@@ -99,46 +99,26 @@ select results_eq(
   'high-value account changes are audited'
 );
 
-insert into public.monthly_plans (id, family_id, month_key, status)
-values (
-  'a1000000-0000-0000-0000-000000000001',
-  'a0000000-0000-0000-0000-000000000001',
-  '2026-08-01',
-  'draft'
+select lives_ok(
+  $$select public.save_monthly_plan(
+    '2026-08-01',
+    'Original plan',
+    50,
+    10,
+    20,
+    15,
+    5
+  )$$,
+  'a family member can activate a valid monthly plan'
 );
 
-insert into public.monthly_plan_versions (
-  id,
-  monthly_plan_id,
-  family_id,
-  version_number,
-  reason,
-  essentials_percent,
-  personal_percent,
-  savings_percent,
-  investment_percent,
-  reserve_percent,
-  created_by
-)
-values (
-  'a2000000-0000-0000-0000-000000000001',
-  'a1000000-0000-0000-0000-000000000001',
-  'a0000000-0000-0000-0000-000000000001',
-  1,
-  'Original plan',
-  50,
-  10,
-  20,
-  15,
-  5,
-  '10000000-0000-0000-0000-000000000001'
-);
+reset role;
 
 select throws_ok(
   $$
     update public.monthly_plan_versions
     set reason = 'Overwritten'
-    where id = 'a2000000-0000-0000-0000-000000000001'
+    where reason = 'Original plan'
   $$,
   'P0001',
   'Monthly plan versions are immutable',
@@ -158,9 +138,9 @@ select throws_ok(
       investment_percent,
       reserve_percent,
       created_by
-    ) values (
-      'a1000000-0000-0000-0000-000000000001',
-      'a0000000-0000-0000-0000-000000000001',
+    ) select
+      plan_row.id,
+      plan_row.family_id,
       2,
       'Invalid plan',
       60,
@@ -169,7 +149,8 @@ select throws_ok(
       15,
       5,
       '10000000-0000-0000-0000-000000000001'
-    )
+    from public.monthly_plans as plan_row
+    where plan_row.month_key = '2026-08-01'
   $$,
   '23514',
   null,

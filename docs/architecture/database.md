@@ -19,6 +19,17 @@ RLS helper functions live in the non-exposed `private` schema. They use the veri
 
 The helpers use `security definer` only for the membership lookup that must bypass profile RLS. Their search path is empty, anonymous execution is revoked, and execution is granted only to authenticated and service roles.
 
+## Atomic finance operations
+
+Phase 2 routes balance- and history-sensitive writes through authenticated public RPC wrappers backed by family-scoped private functions:
+
+- expenses and their optional account debit commit together;
+- same-currency transfers debit and credit together and never become spending;
+- account balance adjustments remain family-scoped and audited;
+- monthly plans create an immutable version and advance the active pointer together.
+
+Direct client writes that could bypass these invariants are revoked. Monthly plans are activated only when all five allocations total exactly 100%, and every revision requires a reason.
+
 ## Owner bootstrap
 
 Run the owner bootstrap only after the migration has been applied and the server-only variables in `.env.local` are populated:
@@ -41,4 +52,4 @@ Database policy tests live in `supabase/tests/` and run against the local Supaba
 npm run supabase:test:db
 ```
 
-The tests cover anonymous denial, same-family visibility, cross-family isolation, owner-only settings, member profile updates, protected role columns, RLS coverage for every table, audit creation, immutable plan history, exact 100% allocations, and category seeds.
+The tests cover anonymous denial, same-family visibility, cross-family isolation, owner-only settings, member profile updates, protected role columns, RLS coverage for every table, audit creation, atomic account operations, immutable plan history, exact 100% allocations, and category seeds.

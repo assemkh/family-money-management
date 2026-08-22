@@ -8,6 +8,7 @@ import {
   incomeEntrySchema,
   liabilityEntrySchema,
   manualExchangeRateSchema,
+  monthlyPlanSchema,
   transferEntrySchema,
   recurringEntrySchema,
 } from "@/lib/finance/validation";
@@ -181,6 +182,36 @@ describe("finance entry validation", () => {
         ...base,
         frequency: "custom",
         customIntervalDays: "",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts only monthly plans that total exactly 100 percent", () => {
+    const plan = {
+      month: "2026-09",
+      reason: "Initial plan",
+      essentialsPercent: "50",
+      personalPercent: "10",
+      savingsPercent: "20",
+      investmentPercent: "15",
+      reservePercent: "5",
+    };
+    expect(monthlyPlanSchema.parse(plan).month).toBe("2026-09-01");
+    expect(
+      monthlyPlanSchema.safeParse({ ...plan, essentialsPercent: "51" }).success,
+    ).toBe(false);
+  });
+
+  it("requires a reason for every monthly plan version", () => {
+    expect(
+      monthlyPlanSchema.safeParse({
+        month: "2026-09",
+        reason: "",
+        essentialsPercent: "50",
+        personalPercent: "10",
+        savingsPercent: "20",
+        investmentPercent: "15",
+        reservePercent: "5",
       }).success,
     ).toBe(false);
   });

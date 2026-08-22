@@ -24,7 +24,11 @@ select ok(
   'authenticated users cannot directly update profile roles'
 );
 
-set local session_replication_role = replica;
+insert into auth.users (id, email)
+values
+  ('10000000-0000-0000-0000-000000000001', 'owner-a@example.test'),
+  ('10000000-0000-0000-0000-000000000002', 'member-a@example.test'),
+  ('20000000-0000-0000-0000-000000000001', 'owner-b@example.test');
 
 insert into public.families (id, name)
 values
@@ -55,7 +59,6 @@ values
     'owner'
   );
 
-set local session_replication_role = origin;
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeftRight,
   Banknote,
+  CalendarRange,
   CircleDollarSign,
   Gem,
   HandCoins,
@@ -174,6 +175,12 @@ export default async function AccountsPage() {
         </h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
+            {
+              href: "/monthly-plan",
+              label: "Monthly plan",
+              description: "Allocate this month",
+              icon: CalendarRange,
+            },
             {
               href: "/assets",
               label: "Assets & gold",

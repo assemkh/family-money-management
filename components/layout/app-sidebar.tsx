@@ -40,7 +40,11 @@ export function AppSidebar({ messages }: AppSidebarProps) {
       icon: House,
       label: messages.navigation.dashboard,
     },
-    { icon: CalendarRange, label: messages.navigation.monthlyPlan },
+    {
+      href: "/monthly-plan",
+      icon: CalendarRange,
+      label: messages.navigation.monthlyPlan,
+    },
     {
       href: "/expenses",
       icon: ReceiptText,

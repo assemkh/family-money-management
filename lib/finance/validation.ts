@@ -59,6 +59,14 @@ const monthSchema = z
   .regex(/^\d{4}-(?:0[1-9]|1[0-2])$/, "Choose a valid month.")
   .transform((value) => `${value}-01`);
 
+const percentageSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter a percentage.")
+  .regex(/^\d{1,3}(?:[.,]\d{1,2})?$/, "Use a percentage with up to 2 decimals.")
+  .transform((value) => value.replace(",", "."))
+  .refine((value) => Number(value) <= 100, "Percentage cannot exceed 100.");
+
 const dateSchema = z.string().refine((value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
@@ -115,6 +123,36 @@ export const manualExchangeRateSchema = z.object({
   rate: exchangeRateSchema,
   effectiveDate: dateSchema,
 });
+
+export const monthlyPlanSchema = z
+  .object({
+    month: monthSchema,
+    reason: z
+      .string()
+      .trim()
+      .min(1, "Explain why this plan or revision is being created.")
+      .max(500, "Keep the reason under 500 characters."),
+    essentialsPercent: percentageSchema,
+    personalPercent: percentageSchema,
+    savingsPercent: percentageSchema,
+    investmentPercent: percentageSchema,
+    reservePercent: percentageSchema,
+  })
+  .superRefine((value, context) => {
+    const total =
+      Number(value.essentialsPercent) +
+      Number(value.personalPercent) +
+      Number(value.savingsPercent) +
+      Number(value.investmentPercent) +
+      Number(value.reservePercent);
+    if (Math.abs(total - 100) > 0.000001) {
+      context.addIssue({
+        code: "custom",
+        path: ["allocationTotal"],
+        message: `Allocation totals ${total.toFixed(2)}%. It must equal exactly 100%.`,
+      });
+    }
+  });
 
 export const householdMemberSchema = z.object({
   displayName: nameSchema,

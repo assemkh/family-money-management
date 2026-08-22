@@ -109,6 +109,31 @@ export type RecurringItem = {
   categoryName: string | null;
 };
 
+export type MonthlyPlanAllocation = {
+  essentials: number;
+  personal: number;
+  savings: number;
+  investment: number;
+  reserve: number;
+};
+
+export type MonthlyPlanVersion = {
+  id: string;
+  versionNumber: number;
+  reason: string;
+  allocation: MonthlyPlanAllocation;
+  createdAt: string;
+  createdBy: string;
+};
+
+export type MonthlyPlanSummary = {
+  id: string;
+  month: string;
+  status: string;
+  currentVersionId: string | null;
+  versions: MonthlyPlanVersion[];
+};
+
 function addTotals(
   rows: Array<{ amount: number | string; currency: string }>,
 ): MoneyTotal[] {
@@ -564,5 +589,103 @@ export async function getRecurringPageData() {
         ? (categoryNames.get(row.category_id) ?? null)
         : null,
     })),
+  };
+}
+
+function validSelectedMonth(value: string | undefined, fallback: string) {
+  if (!value || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value)) return fallback;
+  return value;
+}
+
+export async function getMonthlyPlanPageData(requestedMonth?: string) {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+  const supabase = await createClient();
+  const currentMonth = getAlgiersDateValues().month;
+  const selectedMonth = validSelectedMonth(requestedMonth, currentMonth);
+
+  const [plansResult, membersResult] = await Promise.all([
+    supabase
+      .from("monthly_plans")
+      .select("id, month_key, status, current_version_id")
+      .eq("family_id", profile.familyId)
+      .order("month_key", { ascending: false })
+      .limit(36),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("family_id", profile.familyId),
+  ]);
+  ensureNoQueryErrors(
+    [plansResult, membersResult],
+    "Monthly plans could not be loaded.",
+  );
+
+  const plans = plansResult.data ?? [];
+  const planIds = plans.map((plan) => plan.id);
+  const versionsResult =
+    planIds.length === 0
+      ? { data: [], error: null }
+      : await supabase
+          .from("monthly_plan_versions")
+          .select(
+            "id, monthly_plan_id, version_number, reason, essentials_percent, personal_percent, savings_percent, investment_percent, reserve_percent, created_at, created_by",
+          )
+          .in("monthly_plan_id", planIds)
+          .order("version_number", { ascending: false });
+  ensureNoQueryErrors([versionsResult], "Monthly plan history could not be loaded.");
+
+  const memberNames = new Map(
+    (membersResult.data ?? []).map((member) => [member.id, member.display_name]),
+  );
+  const versionsByPlan = new Map<string, MonthlyPlanVersion[]>();
+  (versionsResult.data ?? []).forEach((version) => {
+    const mapped: MonthlyPlanVersion = {
+      id: version.id,
+      versionNumber: version.version_number,
+      reason: version.reason,
+      allocation: {
+        essentials: Number(version.essentials_percent),
+        personal: Number(version.personal_percent),
+        savings: Number(version.savings_percent),
+        investment: Number(version.investment_percent),
+        reserve: Number(version.reserve_percent),
+      },
+      createdAt: version.created_at,
+      createdBy: memberNames.get(version.created_by) ?? "Family member",
+    };
+    versionsByPlan.set(version.monthly_plan_id, [
+      ...(versionsByPlan.get(version.monthly_plan_id) ?? []),
+      mapped,
+    ]);
+  });
+
+  const summaries: MonthlyPlanSummary[] = plans.map((plan) => ({
+    id: plan.id,
+    month: plan.month_key.slice(0, 7),
+    status: plan.status,
+    currentVersionId: plan.current_version_id,
+    versions: versionsByPlan.get(plan.id) ?? [],
+  }));
+  const selectedPlan = summaries.find((plan) => plan.month === selectedMonth) ?? null;
+  const currentVersion =
+    selectedPlan?.versions.find(
+      (version) => version.id === selectedPlan.currentVersionId,
+    ) ??
+    selectedPlan?.versions[0] ??
+    null;
+
+  return {
+    selectedMonth,
+    selectedPlan,
+    currentVersion,
+    plans: summaries,
+    defaultAllocation: {
+      essentials: 50,
+      personal: 10,
+      savings: 20,
+      investment: 15,
+      reserve: 5,
+    } satisfies MonthlyPlanAllocation,
   };
 }

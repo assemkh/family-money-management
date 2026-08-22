@@ -12,6 +12,7 @@ import {
   investmentEntrySchema,
   liabilityEntrySchema,
   manualExchangeRateSchema,
+  monthlyPlanSchema,
   recurringEntrySchema,
   transferEntrySchema,
 } from "@/lib/finance/validation";
@@ -66,6 +67,10 @@ function safeDatabaseMessage(
     ["Transfer accounts must be different", "Choose two different accounts."],
     ["Invalid family account", "Choose an active account from your family."],
     ["Invalid family category", "Choose an available family category."],
+    [
+      "Monthly allocation must total exactly 100 percent",
+      "The monthly allocation must total exactly 100% before it can be activated.",
+    ],
   ]);
 
   return knownMessages.get(error?.message ?? "") ?? fallback;
@@ -521,4 +526,48 @@ export async function createRecurringAction(
     return { status: "error", message: "The recurring item could not be saved." };
   revalidatePath("/recurring");
   return { status: "success", message: "Recurring item saved." };
+}
+
+export async function saveMonthlyPlanAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = monthlyPlanSchema.safeParse({
+    month: formData.get("month"),
+    reason: formData.get("reason"),
+    essentialsPercent: formData.get("essentialsPercent"),
+    personalPercent: formData.get("personalPercent"),
+    savingsPercent: formData.get("savingsPercent"),
+    investmentPercent: formData.get("investmentPercent"),
+    reservePercent: formData.get("reservePercent"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("save_monthly_plan", {
+    p_month_key: result.data.month,
+    p_reason: result.data.reason,
+    p_essentials_percent: result.data.essentialsPercent,
+    p_personal_percent: result.data.personalPercent,
+    p_savings_percent: result.data.savingsPercent,
+    p_investment_percent: result.data.investmentPercent,
+    p_reserve_percent: result.data.reservePercent,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: safeDatabaseMessage(
+        error,
+        "The monthly plan could not be saved. The active version was not changed.",
+      ),
+    };
+  }
+
+  revalidatePath("/monthly-plan");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Monthly plan activated as a new version." };
 }

@@ -63,6 +63,7 @@ export function MobileNavigation({ messages }: MobileNavigationProps) {
         className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-medium transition ${
           [
             "/accounts",
+            "/monthly-plan",
             "/transfers",
             "/assets",
             "/investments",
