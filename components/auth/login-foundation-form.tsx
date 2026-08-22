@@ -1,5 +1,4 @@
 import { LockKeyhole, UserRound } from "lucide-react";
-import Link from "next/link";
 
 import type { Messages } from "@/lib/i18n/types";
 
@@ -99,13 +98,6 @@ export function LoginFoundationForm({
           {messages.auth.pendingDescription}
         </p>
       </form>
-
-      <Link
-        href="/dashboard"
-        className="mt-6 block rounded-lg text-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-      >
-        {messages.auth.backToFoundation}
-      </Link>
     </div>
   );
 }

@@ -8,7 +8,7 @@ This document records the boundaries established during Phase 1A.
 - `proxy.ts` refreshes Supabase cookie sessions and protects application routes.
 - `lib/auth/session.ts` verifies identity server-side with `getClaims()`.
 - Browser and server Supabase clients are created per usage context.
-- Missing Supabase variables produce a visible setup state; populated secrets are never committed.
+- Missing Supabase variables produce a visible login configuration state; protected routes fail closed and populated secrets are never committed.
 
 ## Application structure
 

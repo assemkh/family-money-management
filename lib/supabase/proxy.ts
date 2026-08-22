@@ -1,13 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthRedirect } from "@/lib/auth/access";
 import { getPublicEnvironment, hasSupabaseEnvironment } from "@/lib/env/public";
-
-const publicRoutes = new Set(["/", "/api/health", "/login"]);
-
-function isPublicRoute(pathname: string) {
-  return publicRoutes.has(pathname) || pathname.startsWith("/auth/");
-}
 
 function redirectWithSession(
   request: NextRequest,
@@ -31,8 +26,15 @@ function redirectWithSession(
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
 
   if (!hasSupabaseEnvironment()) {
+    const redirectPath = getAuthRedirect(pathname, false);
+
+    if (redirectPath) {
+      return redirectWithSession(request, supabaseResponse, redirectPath);
+    }
+
     return supabaseResponse;
   }
 
@@ -61,14 +63,10 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const isAuthenticated = Boolean(data?.claims);
-  const pathname = request.nextUrl.pathname;
+  const redirectPath = getAuthRedirect(pathname, isAuthenticated);
 
-  if (!isAuthenticated && !isPublicRoute(pathname)) {
-    return redirectWithSession(request, supabaseResponse, "/login");
-  }
-
-  if (isAuthenticated && pathname === "/login") {
-    return redirectWithSession(request, supabaseResponse, "/dashboard");
+  if (redirectPath) {
+    return redirectWithSession(request, supabaseResponse, redirectPath);
   }
 
   return supabaseResponse;

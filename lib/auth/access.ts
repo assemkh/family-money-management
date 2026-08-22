@@ -1,0 +1,20 @@
+const publicRoutes = new Set(["/", "/api/health", "/login"]);
+
+export function isPublicRoute(pathname: string) {
+  return publicRoutes.has(pathname) || pathname.startsWith("/auth/");
+}
+
+export function getAuthRedirect(
+  pathname: string,
+  isAuthenticated: boolean,
+): "/dashboard" | "/login" | null {
+  if (!isAuthenticated && !isPublicRoute(pathname)) {
+    return "/login";
+  }
+
+  if (isAuthenticated && pathname === "/login") {
+    return "/dashboard";
+  }
+
+  return null;
+}

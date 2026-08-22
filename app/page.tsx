@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const authState = await readAuthState();
 
-  if (authState.status === "authenticated" || authState.status === "unconfigured") {
+  if (authState.status === "authenticated") {
     redirect("/dashboard");
   }
 

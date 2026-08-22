@@ -21,7 +21,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Without Supabase credentials, the dashboard runs in an explicit setup mode so the foundation can still be reviewed.
+Open [http://localhost:3000](http://localhost:3000). Without valid Supabase credentials, protected routes fail closed and redirect to the login configuration state.
 
 Add the public values from the Supabase project **Connect** dialog to `.env.local`:
 
