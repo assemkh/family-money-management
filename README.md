@@ -2,7 +2,7 @@
 
 A private, web-based system for managing household money together.
 
-Phases 1A and 1B establish the production and security foundation: Next.js App Router, Supabase SSR Auth, username login, forced first-login password replacement, a family-isolated PostgreSQL schema, RLS, audit logging, automated tests, and CI checks.
+Phases 1A and 1B establish the production and security foundation: Next.js App Router, Supabase SSR Auth, username-or-email login, forced first-login password replacement, a family-isolated PostgreSQL schema, RLS, audit logging, automated tests, and CI checks.
 
 ## Requirements
 
@@ -36,9 +36,9 @@ Never commit `.env.local`, database passwords, access tokens, bootstrap password
 ## Available routes
 
 - `/dashboard` — authenticated application shell and security readiness
-- `/login` — username and password login
+- `/login` — username-or-email and password login
 - `/change-password` — authenticated password replacement, mandatory on first login
-- `/forgot-password` — username-based account recovery
+- `/forgot-password` — username-or-email account recovery
 - `/api/health` — safe application and Supabase configuration status
 
 The root route directs visitors to the appropriate dashboard or login experience. Supabase sessions are read server-side, and authenticated routes are rendered dynamically to avoid sharing cached user state.

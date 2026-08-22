@@ -2,8 +2,20 @@ import { z } from "zod";
 
 import { usernameSchema } from "@/lib/validation/common";
 
+export const loginIdentifierSchema = z
+  .string()
+  .trim()
+  .min(3, "Enter your username or email address.")
+  .max(254, "The login identifier is too long.")
+  .transform((value) => value.toLowerCase())
+  .refine(
+    (value) =>
+      z.email().safeParse(value).success || usernameSchema.safeParse(value).success,
+    "Enter a valid username or email address.",
+  );
+
 export const loginSchema = z.object({
-  username: usernameSchema.transform((value) => value.toLowerCase()),
+  identifier: loginIdentifierSchema,
   password: z.string().min(1, "Enter your password.").max(128),
   remember: z.boolean(),
 });
@@ -33,5 +45,5 @@ export const changePasswordSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  username: usernameSchema.transform((value) => value.toLowerCase()),
+  identifier: loginIdentifierSchema,
 });

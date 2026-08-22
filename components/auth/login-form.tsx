@@ -32,7 +32,7 @@ export function LoginForm({ configured, messages }: LoginFormProps) {
           </p>
           <p className="mt-0.5 opacity-75">
             {configured
-              ? "Sign in with your family username. Your private email stays hidden."
+              ? "Sign in with your family username or the owner email address."
               : "The server-only Supabase key must be configured before login can be enabled."}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function LoginForm({ configured, messages }: LoginFormProps) {
 
       <form action={action} className="space-y-5">
         <div>
-          <label htmlFor="username" className="mb-2 block text-sm font-medium">
+          <label htmlFor="identifier" className="mb-2 block text-sm font-medium">
             {messages.auth.username}
           </label>
           <div className="relative">
@@ -49,19 +49,19 @@ export function LoginForm({ configured, messages }: LoginFormProps) {
               className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <input
-              id="username"
-              name="username"
+              id="identifier"
+              name="identifier"
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
               required
               disabled={!configured || pending}
               placeholder={messages.auth.usernamePlaceholder}
-              aria-invalid={Boolean(state.fieldErrors?.username)}
+              aria-invalid={Boolean(state.fieldErrors?.identifier)}
               className="h-12 w-full rounded-xl border bg-background ps-10 pe-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
-          <FieldError errors={state.fieldErrors?.username} />
+          <FieldError errors={state.fieldErrors?.identifier} />
         </div>
 
         <div>

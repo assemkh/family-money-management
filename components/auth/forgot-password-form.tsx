@@ -23,15 +23,15 @@ export function ForgotPasswordForm() {
           Reset your password
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Enter only your username. If a recovery address exists, we’ll send the secure
-          link there without revealing it.
+          Enter your username or email. If the account exists, we’ll send the secure
+          link without revealing account details.
         </p>
       </div>
 
       <form action={action} className="space-y-5">
         <div>
-          <label htmlFor="username" className="mb-2 block text-sm font-medium">
-            Username
+          <label htmlFor="identifier" className="mb-2 block text-sm font-medium">
+            Username or email
           </label>
           <div className="relative">
             <UserRound
@@ -39,8 +39,8 @@ export function ForgotPasswordForm() {
               className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <input
-              id="username"
-              name="username"
+              id="identifier"
+              name="identifier"
               autoComplete="username"
               autoCapitalize="none"
               required
@@ -48,9 +48,9 @@ export function ForgotPasswordForm() {
               className="h-12 w-full rounded-xl border bg-background ps-10 pe-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
           </div>
-          {state.fieldErrors?.username?.[0] ? (
+          {state.fieldErrors?.identifier?.[0] ? (
             <p className="mt-1.5 text-xs font-medium text-destructive">
-              {state.fieldErrors.username[0]}
+              {state.fieldErrors.identifier[0]}
             </p>
           ) : null}
         </div>

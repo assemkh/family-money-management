@@ -29,7 +29,7 @@ npm run supabase:bootstrap-owner
 
 The command creates the Auth user, family, and owner profile without exposing the internal email or secret key to browser code. It is safe to rerun and never resets an existing owner's password.
 
-The temporary password must be changed on first login. The application layout reads the protected profile flag on every request and does not render the financial workspace until replacement succeeds. Username resolution, internal email lookup, owner provisioning, and profile security mutations use the server-only Supabase client; the secret key is never bundled for the browser.
+The temporary password must be changed on first login. The application layout reads the protected profile flag on every request and does not render the financial workspace until replacement succeeds. Login accepts either the public family username or the associated Auth email. Username resolution, owner provisioning, and profile security mutations use the server-only Supabase client; the secret key is never bundled for the browser.
 
 The bootstrap also copies editable category templates into the family, creates the four planned income sources, creates Cash/CCP/EUR/USD accounts, and installs controlled default settings. Re-running it fills missing seed data without resetting the owner's password.
 

@@ -25,12 +25,17 @@ function invalidFields(error: {
   };
 }
 
-async function resolveUsername(username: string) {
+async function resolveIdentifier(identifier: string) {
   const admin = createAdminClient();
+
+  if (identifier.includes("@")) {
+    return { email: identifier };
+  }
+
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("id, must_change_password")
-    .eq("username", username)
+    .select("id")
+    .eq("username", identifier)
     .maybeSingle();
 
   if (profileError || !profile) return null;
@@ -41,7 +46,6 @@ async function resolveUsername(username: string) {
 
   return {
     email: data.user.email,
-    mustChangePassword: profile.must_change_password,
   };
 }
 
@@ -50,7 +54,7 @@ export async function loginAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const result = loginSchema.safeParse({
-    username: formData.get("username"),
+    identifier: formData.get("identifier"),
     password: formData.get("password"),
     remember: formData.get("remember") === "on",
   });
@@ -67,21 +71,36 @@ export async function loginAction(
   let destination = "/dashboard";
 
   try {
-    const identity = await resolveUsername(result.data.username);
+    const identity = await resolveIdentifier(result.data.identifier);
     const supabase = await createClient({ rememberSession: result.data.remember });
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: identity?.email ?? `${result.data.username}@invalid.local`,
+      email: identity?.email ?? `${result.data.identifier}@invalid.local`,
       password: result.data.password,
     });
 
     if (error || !identity || !data.user) {
       return {
         status: "error",
-        message: "The username or password is incorrect.",
+        message: "The username, email, or password is incorrect.",
       };
     }
 
-    await supabase
+    const admin = createAdminClient();
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .select("must_change_password")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      await supabase.auth.signOut({ scope: "local" });
+      return {
+        status: "error",
+        message: "The username, email, or password is incorrect.",
+      };
+    }
+
+    await admin
       .from("profiles")
       .update({ last_login_at: new Date().toISOString() })
       .eq("id", data.user.id);
@@ -99,7 +118,7 @@ export async function loginAction(
       },
     );
 
-    destination = identity.mustChangePassword ? "/change-password" : "/dashboard";
+    destination = profile.must_change_password ? "/change-password" : "/dashboard";
   } catch {
     return {
       status: "error",
@@ -180,20 +199,21 @@ export async function forgotPasswordAction(
   _previousState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const result = forgotPasswordSchema.safeParse({ username: formData.get("username") });
+  const result = forgotPasswordSchema.safeParse({
+    identifier: formData.get("identifier"),
+  });
 
   if (!result.success) return invalidFields(result.error);
 
   const success: AuthActionState = {
     status: "success",
-    message:
-      "If that username has a recovery address, a password-reset link has been sent.",
+    message: "If that account exists, a password-reset link has been sent.",
   };
 
   if (!hasServerEnvironment()) return success;
 
   try {
-    const identity = await resolveUsername(result.data.username);
+    const identity = await resolveIdentifier(result.data.identifier);
 
     if (!identity) return success;
 

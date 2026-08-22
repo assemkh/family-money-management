@@ -10,18 +10,31 @@ import {
 describe("authentication validation", () => {
   it("normalizes usernames before server-side identity resolution", () => {
     const result = loginSchema.parse({
-      username: "AssemKH",
+      identifier: "AssemKH",
       password: "temporary-password",
       remember: true,
     });
 
-    expect(result.username).toBe("assemkh");
+    expect(result.identifier).toBe("assemkh");
+  });
+
+  it("accepts and normalizes an email login identifier", () => {
+    const result = loginSchema.parse({
+      identifier: "Owner@Example.com",
+      password: "temporary-password",
+      remember: true,
+    });
+
+    expect(result.identifier).toBe("owner@example.com");
   });
 
   it("never accepts an empty login password", () => {
     expect(
-      loginSchema.safeParse({ username: "assemkh", password: "", remember: false })
-        .success,
+      loginSchema.safeParse({
+        identifier: "assemkh",
+        password: "",
+        remember: false,
+      }).success,
     ).toBe(false);
   });
 
@@ -40,9 +53,9 @@ describe("authentication validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("supports recovery without exposing an email field", () => {
-    const result = forgotPasswordSchema.parse({ username: "ASSEMkh" });
+  it("supports recovery by username", () => {
+    const result = forgotPasswordSchema.parse({ identifier: "ASSEMkh" });
 
-    expect(result).toEqual({ username: "assemkh" });
+    expect(result).toEqual({ identifier: "assemkh" });
   });
 });
