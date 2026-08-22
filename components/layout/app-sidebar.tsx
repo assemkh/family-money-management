@@ -60,7 +60,7 @@ export function AppSidebar({ messages }: AppSidebarProps) {
       icon: WalletCards,
       label: messages.navigation.accounts,
     },
-    { icon: Goal, label: messages.navigation.goals },
+    { href: "/goals", icon: Goal, label: messages.navigation.goals },
   ];
 
   const planningItems: NavigationItem[] = [

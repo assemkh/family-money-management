@@ -14,6 +14,9 @@ import {
   manualExchangeRateSchema,
   monthlyPlanSchema,
   recurringEntrySchema,
+  savingContributionSchema,
+  savingsGoalSchema,
+  savingsGoalStatusSchema,
   transferEntrySchema,
 } from "@/lib/finance/validation";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -71,6 +74,12 @@ function safeDatabaseMessage(
       "Monthly allocation must total exactly 100 percent",
       "The monthly allocation must total exactly 100% before it can be activated.",
     ],
+    [
+      "Goal and contribution currencies must match",
+      "Use the same currency as the selected savings goal.",
+    ],
+    ["Savings goal is not active", "Reactivate this goal before adding money."],
+    ["Invalid family savings goal", "Choose an available family savings goal."],
   ]);
 
   return knownMessages.get(error?.message ?? "") ?? fallback;
@@ -570,4 +579,125 @@ export async function saveMonthlyPlanAction(
   revalidatePath("/monthly-plan");
   revalidatePath("/dashboard");
   return { status: "success", message: "Monthly plan activated as a new version." };
+}
+
+export async function createSavingsGoalAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = savingsGoalSchema.safeParse({
+    name: formData.get("name"),
+    targetAmount: formData.get("targetAmount"),
+    currency: formData.get("currency"),
+    targetDate: formData.get("targetDate"),
+    priority: formData.get("priority"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("create_savings_goal", {
+    p_name: result.data.name,
+    p_target_amount: result.data.targetAmount,
+    p_currency: result.data.currency,
+    p_target_date: result.data.targetDate,
+    p_priority: result.data.priority,
+    p_notes: result.data.note,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: safeDatabaseMessage(error, "The savings goal could not be created."),
+    };
+  }
+
+  revalidatePath("/goals");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Savings goal created." };
+}
+
+export async function recordSavingContributionAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = savingContributionSchema.safeParse({
+    goalId: formData.get("goalId"),
+    transactionDate: formData.get("transactionDate"),
+    amount: formData.get("amount"),
+    currency: formData.get("currency"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("record_saving_contribution", {
+    p_transaction_date: result.data.transactionDate,
+    p_amount: result.data.amount,
+    p_currency: result.data.currency,
+    p_goal_id: result.data.goalId,
+    p_note: result.data.note,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: safeDatabaseMessage(
+        error,
+        "The savings contribution could not be saved. Goal progress was not changed.",
+      ),
+    };
+  }
+
+  revalidatePath("/goals");
+  revalidatePath("/dashboard");
+  return {
+    status: "success",
+    message: "Savings recorded and goal progress updated.",
+  };
+}
+
+export async function setSavingsGoalStatusAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = savingsGoalStatusSchema.safeParse({
+    goalId: formData.get("goalId"),
+    status: formData.get("status"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("set_savings_goal_status", {
+    p_goal_id: result.data.goalId,
+    p_status: result.data.status,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: safeDatabaseMessage(error, "The savings goal could not be updated."),
+    };
+  }
+
+  revalidatePath("/goals");
+  revalidatePath("/dashboard");
+  return {
+    status: "success",
+    message:
+      result.data.status === "cancelled"
+        ? "Goal archived. Its savings history remains intact."
+        : result.data.status === "paused"
+          ? "Goal paused."
+          : "Goal reactivated.",
+  };
 }

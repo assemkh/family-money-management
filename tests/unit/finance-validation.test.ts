@@ -9,8 +9,11 @@ import {
   liabilityEntrySchema,
   manualExchangeRateSchema,
   monthlyPlanSchema,
-  transferEntrySchema,
   recurringEntrySchema,
+  savingContributionSchema,
+  savingsGoalSchema,
+  savingsGoalStatusSchema,
+  transferEntrySchema,
 } from "@/lib/finance/validation";
 
 const uuid = "11111111-1111-4111-8111-111111111111";
@@ -213,6 +216,52 @@ describe("finance entry validation", () => {
         investmentPercent: "15",
         reservePercent: "5",
       }).success,
+    ).toBe(false);
+  });
+
+  it("normalizes a savings goal and allows a flexible target date", () => {
+    expect(
+      savingsGoalSchema.parse({
+        name: "  Emergency fund  ",
+        targetAmount: "250000,50",
+        currency: "DZD",
+        targetDate: "",
+        priority: "1",
+        note: "  Six months of essentials  ",
+      }),
+    ).toEqual({
+      name: "Emergency fund",
+      targetAmount: "250000.50",
+      currency: "DZD",
+      targetDate: null,
+      priority: 1,
+      note: "Six months of essentials",
+    });
+  });
+
+  it("accepts general savings and validates an assigned goal", () => {
+    const contribution = {
+      transactionDate: "2026-08-23",
+      amount: "10000",
+      currency: "DZD",
+      note: "Salary transfer",
+    };
+
+    expect(
+      savingContributionSchema.parse({ ...contribution, goalId: "" }).goalId,
+    ).toBeNull();
+    expect(
+      savingContributionSchema.safeParse({ ...contribution, goalId: "not-a-goal" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("limits goal status controls to non-completed workflow states", () => {
+    expect(
+      savingsGoalStatusSchema.safeParse({ goalId: uuid, status: "paused" }).success,
+    ).toBe(true);
+    expect(
+      savingsGoalStatusSchema.safeParse({ goalId: uuid, status: "completed" }).success,
     ).toBe(false);
   });
 });

@@ -154,6 +154,35 @@ export const monthlyPlanSchema = z
     }
   });
 
+export const savingsGoalSchema = z.object({
+  name: nameSchema,
+  targetAmount: amountSchema,
+  currency: supportedCurrencySchema,
+  targetDate: optionalDateSchema,
+  priority: z.coerce
+    .number()
+    .int("Choose a whole-number priority.")
+    .min(1, "Priority must be between 1 and 5.")
+    .max(5, "Priority must be between 1 and 5."),
+  note: noteSchema,
+});
+
+export const savingContributionSchema = z.object({
+  goalId: z.preprocess(
+    (value) => (value === "" || value === null ? null : value),
+    z.uuid("Choose a valid savings goal.").nullable(),
+  ),
+  transactionDate: dateSchema,
+  amount: amountSchema,
+  currency: supportedCurrencySchema,
+  note: noteSchema,
+});
+
+export const savingsGoalStatusSchema = z.object({
+  goalId: z.uuid("Choose a valid savings goal."),
+  status: z.enum(["active", "paused", "cancelled"]),
+});
+
 export const householdMemberSchema = z.object({
   displayName: nameSchema,
   username: usernameSchema
