@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowLeftRight,
   BarChart3,
@@ -15,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { BrandMark } from "@/components/brand/brand-mark";
 import type { Messages } from "@/lib/i18n/types";
@@ -37,8 +40,16 @@ export function AppSidebar({ messages }: AppSidebarProps) {
       label: messages.navigation.dashboard,
     },
     { icon: CalendarRange, label: messages.navigation.monthlyPlan },
-    { icon: ReceiptText, label: messages.navigation.expenses },
-    { icon: CircleDollarSign, label: messages.navigation.income },
+    {
+      href: "/expenses",
+      icon: ReceiptText,
+      label: messages.navigation.expenses,
+    },
+    {
+      href: "/income",
+      icon: CircleDollarSign,
+      label: messages.navigation.income,
+    },
     { icon: WalletCards, label: messages.navigation.accounts },
     { icon: Goal, label: messages.navigation.goals },
   ];
@@ -97,6 +108,8 @@ function NavigationGroup({
   items: NavigationItem[];
   label: string;
 }) {
+  const pathname = usePathname();
+
   return (
     <div>
       <p className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--sidebar-muted))]">
@@ -108,8 +121,12 @@ function NavigationGroup({
             {href ? (
               <Link
                 href={href}
-                className="flex items-center gap-3 rounded-xl bg-white/[0.09] px-3 py-2.5 text-sm font-medium text-white shadow-sm"
-                aria-current="page"
+                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-white/[0.07] hover:text-white ${
+                  pathname === href
+                    ? "bg-white/[0.09] text-white shadow-sm"
+                    : "text-[hsl(var(--sidebar-muted))]"
+                }`}
+                aria-current={pathname === href ? "page" : undefined}
               >
                 <Icon aria-hidden="true" className="size-[1.1rem]" />
                 {itemLabel}
