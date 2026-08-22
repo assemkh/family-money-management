@@ -45,11 +45,11 @@ export const messages = {
     loading: "Loading dashboard",
   },
   dashboard: {
-    eyebrow: "Foundation · Phase 1A",
-    title: "A calmer way to manage money together.",
+    eyebrow: "Security foundation · Phase 1B",
+    title: "Your private financial home is secured.",
     description:
-      "The private workspace is ready. Real financial activity will begin only after your household database and security policies are installed.",
-    statusTitle: "Foundation status",
+      "Username login, forced password replacement, family isolation, financial tables, audit history, and row-level security are now in place.",
+    statusTitle: "Security readiness",
     statusDescription:
       "Everything here reflects real project readiness—never invented balances or sample transactions.",
     ready: "Ready",
@@ -65,16 +65,16 @@ export const messages = {
       "Add the project URL and publishable key to .env.local to activate session checks.",
     securityTitle: "Household security",
     securityDescription:
-      "Database tables, family isolation, roles, RLS, and owner provisioning belong to Phase 1B.",
-    nextTitle: "Next: secure the household",
+      "Owner/member roles, forced first-login password change, family RLS, and audit logging are active.",
+    nextTitle: "Next: record the money flow",
     nextDescription:
-      "Phase 1B turns this polished shell into a private, family-isolated application.",
-    stepDatabase: "Create the family-first database schema",
-    stepHousehold: "Install RLS and owner/member permissions",
-    stepAccess: "Provision username login and forced password change",
+      "Phase 2A turns the secured foundation into the daily income, expense, account, transfer, and asset workflow.",
+    stepDatabase: "Build income and daily expense entry",
+    stepHousehold: "Connect accounts, assets, and transfers",
+    stepAccess: "Add recurring items and liabilities",
     emptyTitle: "No financial data yet—and that is intentional.",
     emptyDescription:
-      "Your first balances, income, and expenses will come from your secured household database, not demo content.",
+      "Your first balances, income, and expenses will be entered in Phase 2A—never invented from demo content.",
   },
   auth: {
     eyebrow: "Private household access",

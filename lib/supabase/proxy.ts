@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getAuthRedirect } from "@/lib/auth/access";
+import { rememberSessionCookie, sessionCookieOptions } from "@/lib/auth/cookies";
 import { getPublicEnvironment, hasSupabaseEnvironment } from "@/lib/env/public";
 
 function redirectWithSession(
@@ -39,6 +40,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   const environment = getPublicEnvironment();
+  const rememberSession =
+    request.cookies.get(rememberSessionCookie)?.value !== "session";
   const supabase = createServerClient(
     environment.NEXT_PUBLIC_SUPABASE_URL,
     environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -51,7 +54,11 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({ request });
 
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              sessionCookieOptions(options, rememberSession),
+            ),
           );
           Object.entries(headers).forEach(([name, value]) =>
             supabaseResponse.headers.set(name, value),

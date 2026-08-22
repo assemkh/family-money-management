@@ -21,7 +21,7 @@ This document records the boundaries established during Phase 1A.
 
 ## Security boundary
 
-Phase 1A establishes session plumbing but does not provision users or financial tables. The username resolver, bootstrap owner, database schema, family membership, roles, RLS, and RLS tests are Phase 1B work. Until then, the sign-in form is intentionally disabled and the dashboard contains no financial data.
+Phase 1A established session plumbing. Phase 1B now adds the username resolver, bootstrap owner, complete finance schema, family membership, roles, forced password replacement, RLS, audit logging, and database policy tests. The dashboard remains free of invented financial data until the Phase 2 entry workflows are built.
 
 ## Verification
 

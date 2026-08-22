@@ -2,8 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { getPublicEnvironment } from "@/lib/env/public";
+import { sessionCookieOptions } from "@/lib/auth/cookies";
 
-export async function createClient() {
+type ServerClientOptions = {
+  rememberSession?: boolean;
+};
+
+export async function createClient(options: ServerClientOptions = {}) {
   const cookieStore = await cookies();
   const environment = getPublicEnvironment();
 
@@ -17,8 +22,12 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+            cookiesToSet.forEach(({ name, value, options: cookieOptions }) =>
+              cookieStore.set(
+                name,
+                value,
+                sessionCookieOptions(cookieOptions, options.rememberSession ?? true),
+              ),
             );
           } catch {
             // Server Components cannot write cookies. The request proxy owns

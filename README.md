@@ -2,7 +2,7 @@
 
 A private, web-based system for managing household money together.
 
-Phase 1A establishes the production foundation: Next.js App Router, TypeScript, Tailwind CSS, Supabase SSR clients, a responsive application shell, shared validation and formatting utilities, automated tests, and CI checks. Financial data and authentication setup begin in Phase 1B.
+Phases 1A and 1B establish the production and security foundation: Next.js App Router, Supabase SSR Auth, username login, forced first-login password replacement, a family-isolated PostgreSQL schema, RLS, audit logging, automated tests, and CI checks.
 
 ## Requirements
 
@@ -35,8 +35,10 @@ Never commit `.env.local`, database passwords, access tokens, bootstrap password
 
 ## Available routes
 
-- `/dashboard` — authenticated application shell and Phase 1A status
-- `/login` — authentication foundation; credentials are enabled in Phase 1B
+- `/dashboard` — authenticated application shell and security readiness
+- `/login` — username and password login
+- `/change-password` — authenticated password replacement, mandatory on first login
+- `/forgot-password` — username-based account recovery
 - `/api/health` — safe application and Supabase configuration status
 
 The root route directs visitors to the appropriate dashboard or login experience. Supabase sessions are read server-side, and authenticated routes are rendered dynamically to avoid sharing cached user state.
@@ -58,11 +60,11 @@ npx supabase login
 npx supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-Phase 1B adds the household schema, Row Level Security policies, and the one-time owner bootstrap flow.
+Phase 1B includes the household schema, every core financial table, Row Level Security policies, immutable monthly plan versions, audit logging, and the one-time owner bootstrap flow.
 
 ### Phase 1B database workflow
 
-The first Phase 1B migration establishes the family/profile identity boundary and its RLS policies. To reproduce and test it locally:
+The Phase 1B migrations establish the family/profile identity boundary, core finance schema, seed category templates, and RLS policies. To reproduce and test them locally:
 
 ```bash
 npm run supabase:start

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { hasSupabaseEnvironment } from "@/lib/env/public";
+import { hasServerEnvironment } from "@/lib/env/server";
 import { getMessages } from "@/lib/i18n/config";
 
 export const metadata: Metadata = {
@@ -54,7 +55,7 @@ function StatusCard({ description, icon: Icon, label, title, tone }: StatusCardP
 
 export default function DashboardFoundationPage() {
   const messages = getMessages();
-  const supabaseConfigured = hasSupabaseEnvironment();
+  const supabaseConfigured = hasSupabaseEnvironment() && hasServerEnvironment();
 
   return (
     <div className="space-y-8 sm:space-y-10">
@@ -126,9 +127,9 @@ export default function DashboardFoundationPage() {
           <StatusCard
             description={messages.dashboard.securityDescription}
             icon={LockKeyhole}
-            label={messages.dashboard.nextPhase}
+            label={messages.dashboard.ready}
             title={messages.dashboard.securityTitle}
-            tone="next"
+            tone="ready"
           />
         </div>
       </section>

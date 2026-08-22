@@ -1,4 +1,4 @@
-const publicRoutes = new Set(["/", "/api/health", "/login"]);
+const publicRoutes = new Set(["/", "/api/health", "/forgot-password", "/login"]);
 
 export function isPublicRoute(pathname: string) {
   return publicRoutes.has(pathname) || pathname.startsWith("/auth/");

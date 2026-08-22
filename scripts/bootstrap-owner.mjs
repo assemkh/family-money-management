@@ -3,7 +3,10 @@ import { z } from "zod";
 
 const bootstrapEnvironmentSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  SUPABASE_SECRET_KEY: z.string().startsWith("sb_secret_").min(32),
+  SUPABASE_SECRET_KEY: z
+    .string()
+    .min(32)
+    .refine((value) => value.startsWith("sb_secret_") || value.startsWith("eyJ")),
   BOOTSTRAP_ADMIN_EMAIL: z.email(),
   BOOTSTRAP_ADMIN_PASSWORD: z.string().min(8).max(128),
   BOOTSTRAP_ADMIN_USERNAME: z
@@ -73,6 +76,103 @@ async function removePartialBootstrap(supabase, { createdFamilyId, createdUserId
   }
 }
 
+async function seedFamilyFoundation(supabase, familyId, ownerId) {
+  const { data: existingSources, error: sourceLookupError } = await supabase
+    .from("income_sources")
+    .select("name")
+    .eq("family_id", familyId);
+
+  if (sourceLookupError) throw sourceLookupError;
+
+  const existingSourceNames = new Set(existingSources.map((source) => source.name));
+  const sourceSeeds = [
+    { name: "Assem Source 1", owner_member_id: ownerId, sort_order: 10 },
+    { name: "Assem Source 2", owner_member_id: ownerId, sort_order: 20 },
+    { name: "Wife Source 1", owner_member_id: null, sort_order: 30 },
+    { name: "Wife Source 2", owner_member_id: null, sort_order: 40 },
+  ].filter((source) => !existingSourceNames.has(source.name));
+
+  if (sourceSeeds.length > 0) {
+    const { error } = await supabase.from("income_sources").insert(
+      sourceSeeds.map((source) => ({
+        ...source,
+        family_id: familyId,
+        created_by: ownerId,
+        updated_by: ownerId,
+      })),
+    );
+    if (error) throw error;
+  }
+
+  const { data: familyCategories, error: categoryLookupError } = await supabase
+    .from("expense_categories")
+    .select("name, type")
+    .eq("family_id", familyId);
+
+  if (categoryLookupError) throw categoryLookupError;
+
+  if (familyCategories.length === 0) {
+    const { data: templates, error: templateError } = await supabase
+      .from("expense_categories")
+      .select("name, type, sort_order")
+      .is("family_id", null);
+
+    if (templateError) throw templateError;
+
+    const { error } = await supabase.from("expense_categories").insert(
+      templates.map((category) => ({
+        ...category,
+        family_id: familyId,
+        created_by: ownerId,
+        updated_by: ownerId,
+      })),
+    );
+    if (error) throw error;
+  }
+
+  const { error: accountError } = await supabase.from("accounts").upsert(
+    [
+      { name: "Cash", type: "cash", currency: "DZD", sort_order: 10 },
+      { name: "CCP", type: "postal", currency: "DZD", sort_order: 20 },
+      { name: "EUR", type: "foreign_currency", currency: "EUR", sort_order: 30 },
+      { name: "USD", type: "foreign_currency", currency: "USD", sort_order: 40 },
+    ].map((account) => ({
+      ...account,
+      family_id: familyId,
+      created_by: ownerId,
+      updated_by: ownerId,
+    })),
+    { onConflict: "family_id,name", ignoreDuplicates: true },
+  );
+
+  if (accountError) throw accountError;
+
+  const { error: settingsError } = await supabase.from("settings").upsert(
+    [
+      {
+        key: "allocation.defaults",
+        value: {
+          essentials: 50,
+          personal: 10,
+          savings: 20,
+          investment: 15,
+          reserve: 5,
+        },
+      },
+      { key: "currencies.supported", value: ["DZD", "EUR", "USD"] },
+      { key: "dashboard.preferences", value: { defaultMonth: "current" } },
+    ].map((setting) => ({
+      ...setting,
+      family_id: familyId,
+      created_by: ownerId,
+      updated_by: ownerId,
+    })),
+    { onConflict: "family_id,key", ignoreDuplicates: true },
+  );
+
+  if (settingsError) throw settingsError;
+}
+
 async function bootstrapOwner() {
   const environment = readEnvironment();
   const supabase = createAdminClient(environment);
@@ -115,7 +215,8 @@ async function bootstrapOwner() {
       );
     }
 
-    console.info("Owner bootstrap is already complete; no changes were made.");
+    await seedFamilyFoundation(supabase, existingProfile.family_id, user.id);
+    console.info("Owner bootstrap and family seed data are already complete.");
     return;
   }
 
@@ -144,6 +245,13 @@ async function bootstrapOwner() {
   if (profileError) {
     await removePartialBootstrap(supabase, { createdFamilyId, createdUserId });
     throw profileError;
+  }
+
+  try {
+    await seedFamilyFoundation(supabase, family.id, user.id);
+  } catch (error) {
+    await removePartialBootstrap(supabase, { createdFamilyId, createdUserId });
+    throw error;
   }
 
   console.info(
