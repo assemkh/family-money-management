@@ -61,7 +61,14 @@ export function MobileNavigation({ messages }: MobileNavigationProps) {
       <Link
         href="/accounts"
         className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-medium transition ${
-          pathname === "/accounts" || pathname === "/transfers"
+          [
+            "/accounts",
+            "/transfers",
+            "/assets",
+            "/investments",
+            "/liabilities",
+            "/recurring",
+          ].includes(pathname)
             ? "text-white"
             : "hover:text-white"
         }`}

@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   accountBalanceSchema,
+  assetEntrySchema,
   expenseEntrySchema,
+  householdMemberSchema,
   incomeEntrySchema,
+  liabilityEntrySchema,
   manualExchangeRateSchema,
   transferEntrySchema,
+  recurringEntrySchema,
 } from "@/lib/finance/validation";
 
 const uuid = "11111111-1111-4111-8111-111111111111";
@@ -108,5 +112,76 @@ describe("finance entry validation", () => {
         effectiveDate: "2026-08-22",
       }).rate,
     ).toBe("251.123456");
+  });
+
+  it("accepts a gold asset with purchase and current values", () => {
+    expect(
+      assetEntrySchema.safeParse({
+        name: "Gold bracelet",
+        assetType: "gold",
+        purchaseValue: "100000",
+        currentValue: "125000",
+        currency: "DZD",
+        purchaseDate: "2026-08-01",
+        note: "",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("normalizes a household username and enforces the database prefix", () => {
+    const member = {
+      displayName: "Wife",
+      username: "Wife.User",
+      email: "WIFE@example.com",
+      temporaryPassword: "StrongPass1!",
+    };
+    expect(householdMemberSchema.parse(member)).toMatchObject({
+      username: "wife.user",
+      email: "wife@example.com",
+    });
+    expect(
+      householdMemberSchema.safeParse({ ...member, username: "_wife" }).success,
+    ).toBe(false);
+  });
+
+  it("prevents liabilities from starting overpaid", () => {
+    expect(
+      liabilityEntrySchema.safeParse({
+        name: "Loan",
+        type: "loan",
+        originalAmount: "1000",
+        paidAmount: "1001",
+        monthlyPayment: "",
+        currency: "DZD",
+        dueDate: "",
+        note: "",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires an interval only for custom recurring schedules", () => {
+    const base = {
+      name: "Rent",
+      type: "expense",
+      categoryId: "",
+      amount: "100",
+      currency: "DZD",
+      nextDueDate: "2026-09-01",
+      note: "",
+    };
+    expect(
+      recurringEntrySchema.safeParse({
+        ...base,
+        frequency: "monthly",
+        customIntervalDays: "",
+      }).success,
+    ).toBe(true);
+    expect(
+      recurringEntrySchema.safeParse({
+        ...base,
+        frequency: "custom",
+        customIntervalDays: "",
+      }).success,
+    ).toBe(false);
   });
 });

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowDownToLine, CalendarDays, UsersRound } from "lucide-react";
 
 import { IncomeEntryForm } from "@/components/finance/income-entry-form";
+import { HouseholdMemberForm } from "@/components/finance/household-member-form";
 import { MoneyTotals } from "@/components/finance/money-totals";
 import { formatMonth } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
@@ -45,6 +46,24 @@ export default async function IncomePage() {
           </div>
         </div>
       </section>
+
+      {data.canManageMembers && !data.hasHouseholdMember ? (
+        <section className="rounded-[1.4rem] border bg-card p-5 sm:p-7">
+          <div className="mb-6 max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+              Private household access
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-semibold tracking-[-0.035em]">
+              Add your wife’s secure login
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Create her separate username and email login, then her income sources
+              become available to both of you.
+            </p>
+          </div>
+          <HouseholdMemberForm />
+        </section>
+      ) : null}
 
       <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
         <div

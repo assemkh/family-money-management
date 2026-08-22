@@ -5,11 +5,17 @@ import { revalidatePath } from "next/cache";
 import type { FinanceActionState } from "@/lib/finance/action-state";
 import {
   accountBalanceSchema,
+  assetEntrySchema,
   expenseEntrySchema,
+  householdMemberSchema,
   incomeEntrySchema,
+  investmentEntrySchema,
+  liabilityEntrySchema,
   manualExchangeRateSchema,
+  recurringEntrySchema,
   transferEntrySchema,
 } from "@/lib/finance/validation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 function invalidFields(error: {
@@ -31,7 +37,7 @@ async function readActionContext() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, family_id, must_change_password")
+    .select("id, family_id, role, must_change_password")
     .eq("id", userId)
     .maybeSingle();
 
@@ -286,4 +292,233 @@ export async function saveExchangeRateAction(
   revalidatePath("/dashboard");
 
   return { status: "success", message: `${result.data.currency} rate updated.` };
+}
+
+export async function createHouseholdMemberAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = householdMemberSchema.safeParse({
+    displayName: formData.get("displayName"),
+    username: formData.get("username"),
+    email: formData.get("email"),
+    temporaryPassword: formData.get("temporaryPassword"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+  if (context.profile.role !== "owner") {
+    return { status: "error", message: "Only the household owner can add a member." };
+  }
+
+  const admin = createAdminClient();
+  const { data: created, error: authError } = await admin.auth.admin.createUser({
+    email: result.data.email,
+    password: result.data.temporaryPassword,
+    email_confirm: true,
+    user_metadata: { display_name: result.data.displayName },
+    app_metadata: { account_type: "household_member" },
+  });
+
+  if (authError || !created.user) {
+    return {
+      status: "error",
+      message: authError?.message.toLowerCase().includes("already")
+        ? "That email already has an account."
+        : "The family member account could not be created.",
+    };
+  }
+
+  const { error: profileError } = await admin.from("profiles").insert({
+    id: created.user.id,
+    family_id: context.profile.family_id,
+    display_name: result.data.displayName,
+    username: result.data.username,
+    role: "member",
+    must_change_password: true,
+  });
+
+  if (profileError) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return {
+      status: "error",
+      message: profileError.message.includes("profiles_username")
+        ? "That username is already in use."
+        : "The family profile could not be created.",
+    };
+  }
+
+  const { error: assignmentError } = await admin
+    .from("income_sources")
+    .update({ owner_member_id: created.user.id })
+    .eq("family_id", context.profile.family_id)
+    .is("owner_member_id", null)
+    .ilike("name", "Wife Source%");
+
+  if (assignmentError) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return { status: "error", message: "Income sources could not be assigned safely." };
+  }
+
+  revalidatePath("/income");
+  return {
+    status: "success",
+    message: `${result.data.displayName} can now sign in by username or email.`,
+  };
+}
+
+export async function createAssetAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = assetEntrySchema.safeParse({
+    name: formData.get("name"),
+    assetType: formData.get("assetType"),
+    purchaseValue: formData.get("purchaseValue"),
+    currentValue: formData.get("currentValue"),
+    currency: formData.get("currency"),
+    purchaseDate: formData.get("purchaseDate"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+  const { error } = await context.supabase.from("assets").insert({
+    family_id: context.profile.family_id,
+    asset_type: result.data.assetType,
+    name: result.data.name,
+    purchase_value: result.data.purchaseValue,
+    current_value: result.data.currentValue,
+    currency: result.data.currency,
+    purchase_date: result.data.purchaseDate,
+    notes: result.data.note,
+  });
+  if (error) return { status: "error", message: "The asset could not be saved." };
+  revalidatePath("/assets");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Asset saved." };
+}
+
+export async function createInvestmentAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = investmentEntrySchema.safeParse({
+    name: formData.get("name"),
+    type: formData.get("type"),
+    purchaseValue: formData.get("purchaseValue"),
+    currentValue: formData.get("currentValue"),
+    currency: formData.get("currency"),
+    purchaseDate: formData.get("purchaseDate"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+  const { error } = await context.supabase.from("investments").insert({
+    family_id: context.profile.family_id,
+    name: result.data.name,
+    type: result.data.type,
+    purchase_cost: result.data.purchaseValue,
+    current_value: result.data.currentValue,
+    currency: result.data.currency,
+    purchase_date: result.data.purchaseDate,
+    notes: result.data.note,
+  });
+  if (error) return { status: "error", message: "The investment could not be saved." };
+  revalidatePath("/investments");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Investment saved." };
+}
+
+export async function createLiabilityAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = liabilityEntrySchema.safeParse({
+    name: formData.get("name"),
+    type: formData.get("type"),
+    originalAmount: formData.get("originalAmount"),
+    paidAmount: formData.get("paidAmount"),
+    monthlyPayment: formData.get("monthlyPayment"),
+    currency: formData.get("currency"),
+    dueDate: formData.get("dueDate"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+  const paid = Number(result.data.paidAmount);
+  const original = Number(result.data.originalAmount);
+  const { error } = await context.supabase.from("liabilities").insert({
+    family_id: context.profile.family_id,
+    name: result.data.name,
+    type: result.data.type,
+    original_amount: result.data.originalAmount,
+    paid_amount: result.data.paidAmount,
+    monthly_payment: result.data.monthlyPayment,
+    currency: result.data.currency,
+    due_date: result.data.dueDate,
+    status: paid >= original ? "paid" : "active",
+    notes: result.data.note,
+  });
+  if (error) return { status: "error", message: "The liability could not be saved." };
+  revalidatePath("/liabilities");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Liability saved." };
+}
+
+export async function createRecurringAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = recurringEntrySchema.safeParse({
+    name: formData.get("name"),
+    type: formData.get("type"),
+    categoryId: formData.get("categoryId"),
+    amount: formData.get("amount"),
+    currency: formData.get("currency"),
+    frequency: formData.get("frequency"),
+    customIntervalDays: formData.get("customIntervalDays"),
+    nextDueDate: formData.get("nextDueDate"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+  if (result.data.categoryId) {
+    const { data: category } = await context.supabase
+      .from("expense_categories")
+      .select("id")
+      .eq("id", result.data.categoryId)
+      .eq("family_id", context.profile.family_id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!category)
+      return { status: "error", message: "Choose an active family category." };
+  }
+  const { error } = await context.supabase.from("recurring_transactions").insert({
+    family_id: context.profile.family_id,
+    name: result.data.name,
+    type: result.data.type,
+    category_id: result.data.categoryId,
+    amount: result.data.amount,
+    currency: result.data.currency,
+    frequency: result.data.frequency,
+    custom_interval_days:
+      result.data.frequency === "custom" ? result.data.customIntervalDays : null,
+    next_due_date: result.data.nextDueDate,
+    active: true,
+    notes: result.data.note,
+  });
+  if (error)
+    return { status: "error", message: "The recurring item could not be saved." };
+  revalidatePath("/recurring");
+  return { status: "success", message: "Recurring item saved." };
 }

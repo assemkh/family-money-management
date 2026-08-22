@@ -5,8 +5,12 @@ import {
   ArrowLeftRight,
   Banknote,
   CircleDollarSign,
+  Gem,
+  HandCoins,
   Landmark,
   WalletCards,
+  LineChart,
+  Repeat2,
 } from "lucide-react";
 
 import { AccountBalanceForm } from "@/components/finance/account-balance-form";
@@ -159,6 +163,61 @@ export default async function AccountsPage() {
             })}
           </div>
         )}
+      </section>
+
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+          Household balance sheet
+        </p>
+        <h2 className="mt-2 font-display text-2xl font-semibold tracking-[-0.035em]">
+          More money tools
+        </h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            {
+              href: "/assets",
+              label: "Assets & gold",
+              description: "Track value and gain",
+              icon: Gem,
+            },
+            {
+              href: "/investments",
+              label: "Investments",
+              description: "Monitor invested capital",
+              icon: LineChart,
+            },
+            {
+              href: "/liabilities",
+              label: "Liabilities",
+              description: "See what remains owed",
+              icon: HandCoins,
+            },
+            {
+              href: "/recurring",
+              label: "Recurring",
+              description: "Prepare for upcoming flows",
+              icon: Repeat2,
+            },
+          ].map(({ href, label, description, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="group flex min-h-24 cursor-pointer items-center gap-4 rounded-2xl border bg-card p-4 transition hover:border-primary/30 hover:bg-primary/[0.025]"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/[0.08] text-primary">
+                <Icon aria-hidden="true" className="size-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold group-hover:text-primary">
+                  {label}
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {description}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-[1.4rem] border bg-card p-5 sm:p-7">

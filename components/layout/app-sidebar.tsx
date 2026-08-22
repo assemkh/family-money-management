@@ -6,6 +6,7 @@ import {
   CalendarRange,
   CircleDollarSign,
   Goal,
+  Gem,
   HandCoins,
   House,
   Landmark,
@@ -59,14 +60,15 @@ export function AppSidebar({ messages }: AppSidebarProps) {
   ];
 
   const planningItems: NavigationItem[] = [
-    { icon: LineChart, label: messages.navigation.investments },
-    { icon: HandCoins, label: messages.navigation.liabilities },
+    { href: "/assets", icon: Gem, label: "Assets & gold" },
+    { href: "/investments", icon: LineChart, label: messages.navigation.investments },
+    { href: "/liabilities", icon: HandCoins, label: messages.navigation.liabilities },
     {
       href: "/transfers",
       icon: ArrowLeftRight,
       label: messages.navigation.transfers,
     },
-    { icon: Repeat2, label: messages.navigation.recurring },
+    { href: "/recurring", icon: Repeat2, label: messages.navigation.recurring },
     { icon: Landmark, label: messages.navigation.netWorth },
     { icon: BarChart3, label: messages.navigation.reports },
     { icon: Settings2, label: messages.navigation.settings },

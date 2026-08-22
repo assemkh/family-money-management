@@ -74,6 +74,41 @@ export type RecentExpense = {
   memberName: string;
 };
 
+export type ValuedItem = {
+  id: string;
+  name: string;
+  type: string;
+  purchaseValue: number;
+  currentValue: number;
+  currency: SupportedCurrency;
+  date: string | null;
+  note: string | null;
+};
+
+export type LiabilityItem = {
+  id: string;
+  name: string;
+  type: string;
+  originalAmount: number;
+  paidAmount: number;
+  monthlyPayment: number | null;
+  currency: SupportedCurrency;
+  dueDate: string | null;
+  status: string;
+};
+
+export type RecurringItem = {
+  id: string;
+  name: string;
+  type: string;
+  amount: number;
+  currency: SupportedCurrency;
+  frequency: string;
+  customIntervalDays: number | null;
+  nextDueDate: string;
+  categoryName: string | null;
+};
+
 function addTotals(
   rows: Array<{ amount: number | string; currency: string }>,
 ): MoneyTotal[] {
@@ -150,6 +185,8 @@ export async function getIncomePageData() {
   }));
 
   return {
+    canManageMembers: profile.role === "owner",
+    hasHouseholdMember: members.some((member) => member.id !== profile.id),
     defaultMonth: month,
     totals: addTotals(monthEntries),
     memberTotals,
@@ -408,6 +445,124 @@ export async function getTransfersPageData() {
       note: transfer.note,
       fromAccountName: accountNames.get(transfer.from_account_id) ?? "Source account",
       toAccountName: accountNames.get(transfer.to_account_id) ?? "Destination account",
+    })),
+  };
+}
+
+export async function getPortfolioPageData(kind: "assets" | "investments") {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+  const supabase = await createClient();
+  const query =
+    kind === "assets"
+      ? supabase
+          .from("assets")
+          .select(
+            "id, name, asset_type, purchase_value, current_value, currency, purchase_date, notes",
+          )
+          .eq("family_id", profile.familyId)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+      : supabase
+          .from("investments")
+          .select(
+            "id, name, type, purchase_cost, current_value, currency, purchase_date, notes",
+          )
+          .eq("family_id", profile.familyId)
+          .order("created_at", { ascending: false });
+  const { data, error } = await query;
+  if (error)
+    throw new Error(
+      `${kind === "assets" ? "Asset" : "Investment"} data could not be loaded.`,
+    );
+  return (data ?? []).map((row): ValuedItem => ({
+    id: row.id,
+    name: row.name,
+    type: "asset_type" in row ? row.asset_type : row.type,
+    purchaseValue: Number(
+      "purchase_value" in row ? row.purchase_value : row.purchase_cost,
+    ),
+    currentValue: Number(row.current_value),
+    currency: row.currency as SupportedCurrency,
+    date: row.purchase_date,
+    note: row.notes,
+  }));
+}
+
+export async function getLiabilitiesPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("liabilities")
+    .select(
+      "id, name, type, original_amount, paid_amount, monthly_payment, currency, due_date, status",
+    )
+    .eq("family_id", profile.familyId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Liability data could not be loaded.");
+  return (data ?? []).map((row): LiabilityItem => ({
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    originalAmount: Number(row.original_amount),
+    paidAmount: Number(row.paid_amount),
+    monthlyPayment: row.monthly_payment === null ? null : Number(row.monthly_payment),
+    currency: row.currency as SupportedCurrency,
+    dueDate: row.due_date,
+    status: row.status,
+  }));
+}
+
+export async function getRecurringPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+  const supabase = await createClient();
+  const [itemsResult, categoriesResult] = await Promise.all([
+    supabase
+      .from("recurring_transactions")
+      .select(
+        "id, name, type, amount, currency, frequency, custom_interval_days, next_due_date, category_id",
+      )
+      .eq("family_id", profile.familyId)
+      .eq("active", true)
+      .order("next_due_date", { ascending: true }),
+    supabase
+      .from("expense_categories")
+      .select("id, name, type")
+      .eq("family_id", profile.familyId)
+      .eq("is_active", true)
+      .order("name"),
+  ]);
+  ensureNoQueryErrors(
+    [itemsResult, categoriesResult],
+    "Recurring data could not be loaded.",
+  );
+  const categories = (categoriesResult.data ?? []).map(
+    (category): ExpenseCategoryOption => ({
+      id: category.id,
+      name: category.name,
+      type: category.type,
+    }),
+  );
+  const categoryNames = new Map(
+    categories.map((category) => [category.id, category.name]),
+  );
+  return {
+    defaultDate: getAlgiersDateValues().date,
+    categories,
+    items: (itemsResult.data ?? []).map((row): RecurringItem => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      amount: Number(row.amount),
+      currency: row.currency as SupportedCurrency,
+      frequency: row.frequency,
+      customIntervalDays: row.custom_interval_days,
+      nextDueDate: row.next_due_date,
+      categoryName: row.category_id
+        ? (categoryNames.get(row.category_id) ?? null)
+        : null,
     })),
   };
 }
