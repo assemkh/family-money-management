@@ -29,3 +29,50 @@ export function calculateLiabilityRemaining(
 ) {
   return Math.max(originalAmount - paidAmount, 0);
 }
+
+export function calculateDzdTotal(
+  rows: Array<{ amount: number; currency: SupportedCurrency }>,
+  rates: ExchangeRateMap,
+) {
+  const missingCurrencies = new Set<Exclude<SupportedCurrency, "DZD">>();
+  let total = 0;
+
+  rows.forEach((row) => {
+    const converted = convertToDzd(row.amount, row.currency, rates);
+    if (converted === null) {
+      if (row.currency !== "DZD" && row.amount !== 0) {
+        missingCurrencies.add(row.currency);
+      }
+      return;
+    }
+    total += converted;
+  });
+
+  return {
+    total,
+    missingCurrencies: [...missingCurrencies].sort(),
+    complete: missingCurrencies.size === 0,
+  };
+}
+
+export function calculatePlannedAmount(income: number, percentage: number) {
+  if (!Number.isFinite(income) || !Number.isFinite(percentage)) return 0;
+  return (income * percentage) / 100;
+}
+
+export function calculateMonthlyFlow({
+  expenses,
+  income,
+  investments,
+  savings,
+}: {
+  expenses: number;
+  income: number;
+  investments: number;
+  savings: number;
+}) {
+  return {
+    remaining: income - expenses - savings - investments,
+    savingRate: income > 0 ? ((savings + investments) / income) * 100 : 0,
+  };
+}

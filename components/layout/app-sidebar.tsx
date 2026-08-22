@@ -73,8 +73,8 @@ export function AppSidebar({ messages }: AppSidebarProps) {
       label: messages.navigation.transfers,
     },
     { href: "/recurring", icon: Repeat2, label: messages.navigation.recurring },
-    { icon: Landmark, label: messages.navigation.netWorth },
-    { icon: BarChart3, label: messages.navigation.reports },
+    { href: "/net-worth", icon: Landmark, label: messages.navigation.netWorth },
+    { href: "/reports", icon: BarChart3, label: messages.navigation.reports },
     { icon: Settings2, label: messages.navigation.settings },
   ];
 

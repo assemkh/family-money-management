@@ -6,9 +6,11 @@ import {
   expenseEntrySchema,
   householdMemberSchema,
   incomeEntrySchema,
+  investmentEventSchema,
   liabilityEntrySchema,
   manualExchangeRateSchema,
   monthlyPlanSchema,
+  netWorthSnapshotSchema,
   recurringEntrySchema,
   savingContributionSchema,
   savingsGoalSchema,
@@ -263,5 +265,30 @@ describe("finance entry validation", () => {
     expect(
       savingsGoalStatusSchema.safeParse({ goalId: uuid, status: "completed" }).success,
     ).toBe(false);
+  });
+
+  it("accepts an explicit investment event tied to a position", () => {
+    expect(
+      investmentEventSchema.parse({
+        investmentId: uuid,
+        transactionDate: "2026-08-23",
+        amount: "12500,50",
+        currency: "DZD",
+        note: "Monthly ETF purchase",
+      }),
+    ).toEqual({
+      investmentId: uuid,
+      transactionDate: "2026-08-23",
+      amount: "12500.50",
+      currency: "DZD",
+      note: "Monthly ETF purchase",
+    });
+  });
+
+  it("normalizes a net-worth snapshot month", () => {
+    expect(netWorthSnapshotSchema.parse({ month: "2026-08" })).toEqual({
+      month: "2026-08-01",
+    });
+    expect(netWorthSnapshotSchema.safeParse({ month: "2026-13" }).success).toBe(false);
   });
 });

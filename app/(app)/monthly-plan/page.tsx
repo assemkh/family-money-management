@@ -3,7 +3,10 @@ import { CalendarRange, Clock3, History, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { MonthlyPlanForm } from "@/components/finance/monthly-plan-form";
+import { MonthlyPlanRevisionDialog } from "@/components/finance/monthly-plan-revision-dialog";
+import { MoneyTotals } from "@/components/finance/money-totals";
 import { formatMonth } from "@/lib/formatting/date";
+import { formatMoney } from "@/lib/formatting/money";
 import { getMonthlyPlanPageData } from "@/lib/finance/data";
 
 export const metadata: Metadata = { title: "Monthly plan" };
@@ -91,7 +94,7 @@ export default async function MonthlyPlanPage({
         <div className="surface-shadow rounded-[1.4rem] border bg-card p-5 sm:p-7">
           <div className="mb-6">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-              {data.currentVersion ? "Revise active plan" : "New plan"}
+              {data.currentVersion ? "Current plan" : "New plan"}
             </p>
             <h2 className="mt-2 font-display text-2xl font-semibold tracking-[-0.035em]">
               {monthLabel(data.selectedMonth)} allocation
@@ -102,13 +105,33 @@ export default async function MonthlyPlanPage({
                 : "The starting suggestion is editable and has no effect until you activate it."}
             </p>
           </div>
-          <MonthlyPlanForm
-            key={data.currentVersion?.id ?? data.selectedMonth}
-            month={data.selectedMonth}
-            allocation={allocation}
-            isRevision={Boolean(data.currentVersion)}
-            nextVersion={(data.currentVersion?.versionNumber ?? 0) + 1}
-          />
+          {data.currentVersion ? (
+            <>
+              <div className="rounded-2xl border bg-muted/35 p-4">
+                <p className="text-xs text-muted-foreground">Active version</p>
+                <p className="mt-1 font-display text-3xl font-semibold">
+                  {data.currentVersion.versionNumber}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Revisions open in a focused review window and always require a reason
+                  before activation.
+                </p>
+              </div>
+              <MonthlyPlanRevisionDialog
+                allocation={allocation}
+                month={data.selectedMonth}
+                nextVersion={data.currentVersion.versionNumber + 1}
+              />
+            </>
+          ) : (
+            <MonthlyPlanForm
+              key={data.selectedMonth}
+              month={data.selectedMonth}
+              allocation={allocation}
+              isRevision={false}
+              nextVersion={1}
+            />
+          )}
         </div>
 
         <div className="space-y-5">
@@ -127,20 +150,51 @@ export default async function MonthlyPlanPage({
               </div>
             </div>
             {data.currentVersion ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {Object.entries(data.currentVersion.allocation).map(
-                  ([label, value]) => (
-                    <div key={label} className="rounded-2xl bg-muted/55 p-4">
-                      <p className="text-xs capitalize text-muted-foreground">
-                        {label}
-                      </p>
-                      <p className="mt-2 font-display text-2xl font-semibold tabular-nums">
-                        {value.toFixed(2)}%
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
+              <>
+                <div className="mt-5 rounded-2xl border bg-muted/30 p-4">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Actual family income
+                  </p>
+                  <div className="mt-2">
+                    <MoneyTotals
+                      emptyLabel="No income recorded for this month"
+                      totals={data.incomeTotals}
+                    />
+                  </div>
+                  {data.missingRateCurrencies.length > 0 ? (
+                    <p className="mt-3 text-xs font-medium text-amber-700 dark:text-amber-300">
+                      Add manual rates for {data.missingRateCurrencies.join(", ")} to
+                      calculate planned DZD amounts.
+                    </p>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {Object.entries(data.currentVersion.allocation).map(
+                    ([label, value]) => (
+                      <div key={label} className="rounded-2xl bg-muted/55 p-4">
+                        <p className="text-xs capitalize text-muted-foreground">
+                          {label}
+                        </p>
+                        <p className="mt-2 font-display text-2xl font-semibold tabular-nums">
+                          {value.toFixed(2)}%
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-muted-foreground tabular-nums">
+                          {data.plannedAmounts
+                            ? formatMoney(
+                                data.plannedAmounts[
+                                  label as keyof typeof data.plannedAmounts
+                                ],
+                                { maximumFractionDigits: 2 },
+                              )
+                            : data.familyIncomeDzd === 0
+                              ? formatMoney(0)
+                              : "DZD amount unavailable"}
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </>
             ) : (
               <div className="mt-5 rounded-2xl border border-dashed px-5 py-10 text-center">
                 <p className="font-medium">This month has no active plan.</p>

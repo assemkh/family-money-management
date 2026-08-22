@@ -70,6 +70,8 @@ export function MobileNavigation({ messages }: MobileNavigationProps) {
             "/liabilities",
             "/recurring",
             "/goals",
+            "/net-worth",
+            "/reports",
           ].includes(pathname)
             ? "text-white"
             : "hover:text-white"

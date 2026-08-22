@@ -10,9 +10,11 @@ import {
   householdMemberSchema,
   incomeEntrySchema,
   investmentEntrySchema,
+  investmentEventSchema,
   liabilityEntrySchema,
   manualExchangeRateSchema,
   monthlyPlanSchema,
+  netWorthSnapshotSchema,
   recurringEntrySchema,
   savingContributionSchema,
   savingsGoalSchema,
@@ -80,6 +82,15 @@ function safeDatabaseMessage(
     ],
     ["Savings goal is not active", "Reactivate this goal before adding money."],
     ["Invalid family savings goal", "Choose an available family savings goal."],
+    [
+      "Investment and event currencies must match",
+      "Use the same currency as the selected investment.",
+    ],
+    ["Invalid family investment", "Choose an investment from your family."],
+    [
+      "Only the current month can be captured",
+      "Historical snapshots are locked. Capture the current month instead.",
+    ],
   ]);
 
   return knownMessages.get(error?.message ?? "") ?? fallback;
@@ -700,4 +711,82 @@ export async function setSavingsGoalStatusAction(
           ? "Goal paused."
           : "Goal reactivated.",
   };
+}
+
+export async function recordInvestmentEventAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = investmentEventSchema.safeParse({
+    investmentId: formData.get("investmentId"),
+    transactionDate: formData.get("transactionDate"),
+    amount: formData.get("amount"),
+    currency: formData.get("currency"),
+    note: formData.get("note"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("record_investment_event", {
+    p_investment_id: result.data.investmentId,
+    p_transaction_date: result.data.transactionDate,
+    p_amount: result.data.amount,
+    p_currency: result.data.currency,
+    p_note: result.data.note,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: safeDatabaseMessage(
+        error,
+        "The investment event could not be saved. The position was not changed.",
+      ),
+    };
+  }
+
+  revalidatePath("/investments");
+  revalidatePath("/dashboard");
+  revalidatePath("/reports");
+  revalidatePath("/net-worth");
+  return {
+    status: "success",
+    message: "Investment recorded and position value updated.",
+  };
+}
+
+export async function captureNetWorthSnapshotAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = netWorthSnapshotSchema.safeParse({
+    month: formData.get("month"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readActionContext();
+  if (!context)
+    return { status: "error", message: "Your session expired. Sign in again." };
+
+  const { error } = await context.supabase.rpc("capture_net_worth_snapshot", {
+    p_snapshot_month: result.data.month,
+  });
+
+  if (error) {
+    const missingRate = error.message.startsWith("Missing current exchange rate for:");
+    return {
+      status: "error",
+      message: missingRate
+        ? `${error.message}. Add the missing manual rate from Accounts first.`
+        : safeDatabaseMessage(error, "The net-worth snapshot could not be captured."),
+    };
+  }
+
+  revalidatePath("/net-worth");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Current-month net worth captured." };
 }

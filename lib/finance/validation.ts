@@ -178,6 +178,18 @@ export const savingContributionSchema = z.object({
   note: noteSchema,
 });
 
+export const investmentEventSchema = z.object({
+  investmentId: z.uuid("Choose a valid investment."),
+  transactionDate: dateSchema,
+  amount: amountSchema,
+  currency: supportedCurrencySchema,
+  note: noteSchema,
+});
+
+export const netWorthSnapshotSchema = z.object({
+  month: monthSchema,
+});
+
 export const savingsGoalStatusSchema = z.object({
   goalId: z.uuid("Choose a valid savings goal."),
   status: z.enum(["active", "paused", "cancelled"]),

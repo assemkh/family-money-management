@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  calculateDzdTotal,
   calculateGain,
   calculateLiabilityRemaining,
+  calculateMonthlyFlow,
+  calculatePlannedAmount,
   convertToDzd,
 } from "@/lib/finance/calculations";
 
@@ -31,5 +34,33 @@ describe("finance calculations", () => {
   it("calculates remaining liability without going below zero", () => {
     expect(calculateLiabilityRemaining(100000, 25000)).toBe(75000);
     expect(calculateLiabilityRemaining(100000, 120000)).toBe(0);
+  });
+
+  it("totals mixed currencies and reports every missing manual rate", () => {
+    expect(
+      calculateDzdTotal(
+        [
+          { amount: 1000, currency: "DZD" },
+          { amount: 10, currency: "EUR" },
+          { amount: 5, currency: "USD" },
+        ],
+        { EUR: 250 },
+      ),
+    ).toEqual({ total: 3500, missingCurrencies: ["USD"], complete: false });
+  });
+
+  it("derives planned DZD amounts from actual income", () => {
+    expect(calculatePlannedAmount(200000, 15)).toBe(30000);
+  });
+
+  it("reconciles explicit savings and investments separately from spending", () => {
+    expect(
+      calculateMonthlyFlow({
+        income: 200000,
+        expenses: 120000,
+        savings: 30000,
+        investments: 20000,
+      }),
+    ).toEqual({ remaining: 30000, savingRate: 25 });
   });
 });

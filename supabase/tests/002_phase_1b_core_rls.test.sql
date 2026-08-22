@@ -12,7 +12,7 @@ select results_eq(
       and relkind = 'r'
       and relrowsecurity
   $$,
-  array[19::bigint],
+  array[20::bigint],
   'every exposed application table has RLS enabled'
 );
 

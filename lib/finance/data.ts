@@ -2,7 +2,13 @@ import "server-only";
 
 import { readCurrentProfile } from "@/lib/auth/profile";
 import { getAlgiersDateValues } from "@/lib/formatting/date";
-import { convertToDzd, type ExchangeRateMap } from "@/lib/finance/calculations";
+import {
+  calculateDzdTotal,
+  calculateMonthlyFlow,
+  calculatePlannedAmount,
+  convertToDzd,
+  type ExchangeRateMap,
+} from "@/lib/finance/calculations";
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -156,6 +162,54 @@ export type SavingContribution = {
   note: string | null;
   goalName: string | null;
   memberName: string;
+};
+
+export type InvestmentEvent = {
+  id: string;
+  transactionDate: string;
+  amount: number;
+  currency: SupportedCurrency;
+  note: string | null;
+  investmentName: string;
+  memberName: string;
+};
+
+export type NetWorthSnapshot = {
+  id: string;
+  month: string;
+  accounts: number;
+  assets: number;
+  investments: number;
+  liabilities: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  rates: Record<string, number>;
+  capturedAt: string;
+};
+
+export type MonthlyReportRow = {
+  month: string;
+  income: number;
+  expenses: number;
+  essentials: number;
+  personal: number;
+  savings: number;
+  investments: number;
+  remaining: number;
+  savingRate: number;
+  plannedEssentials: number | null;
+  plannedPersonal: number | null;
+  plannedSavings: number | null;
+  plannedInvestments: number | null;
+  planVersion: number | null;
+  netWorth: number | null;
+  sourceCounts: {
+    income: number;
+    expenses: number;
+    savings: number;
+    investments: number;
+  };
 };
 
 function addTotals(
@@ -538,6 +592,78 @@ export async function getPortfolioPageData(kind: "assets" | "investments") {
   }));
 }
 
+export async function getInvestmentPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+
+  const supabase = await createClient();
+  const { date, monthStart } = getAlgiersDateValues();
+  const [investmentsResult, eventsResult, membersResult] = await Promise.all([
+    supabase
+      .from("investments")
+      .select(
+        "id, name, type, purchase_cost, current_value, currency, purchase_date, notes",
+      )
+      .eq("family_id", profile.familyId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("financial_transactions")
+      .select(
+        "id, transaction_date, month_key, amount, currency, source_id, note, member_id",
+      )
+      .eq("family_id", profile.familyId)
+      .eq("type", "investment")
+      .order("transaction_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("family_id", profile.familyId),
+  ]);
+  ensureNoQueryErrors(
+    [investmentsResult, eventsResult, membersResult],
+    "Investment data could not be loaded.",
+  );
+
+  const items = (investmentsResult.data ?? []).map((row): ValuedItem => ({
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    purchaseValue: Number(row.purchase_cost),
+    currentValue: Number(row.current_value),
+    currency: row.currency as SupportedCurrency,
+    date: row.purchase_date,
+    note: row.notes,
+  }));
+  const investmentNames = new Map(items.map((item) => [item.id, item.name]));
+  const memberNames = new Map(
+    (membersResult.data ?? []).map((member) => [member.id, member.display_name]),
+  );
+  const eventRows = eventsResult.data ?? [];
+
+  return {
+    defaultDate: date,
+    items,
+    activeOptions: items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      currency: item.currency,
+    })),
+    monthTotals: addTotals(eventRows.filter((row) => row.month_key === monthStart)),
+    recent: eventRows.map((row): InvestmentEvent => ({
+      id: row.id,
+      transactionDate: row.transaction_date,
+      amount: Number(row.amount),
+      currency: row.currency as SupportedCurrency,
+      note: row.note,
+      investmentName:
+        (row.source_id ? investmentNames.get(row.source_id) : null) ?? "Investment",
+      memberName: memberNames.get(row.member_id) ?? "Family member",
+    })),
+  };
+}
+
 export async function getLiabilitiesPageData() {
   const profile = await readCurrentProfile();
   if (!profile) return null;
@@ -625,10 +751,10 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
   const profile = await readCurrentProfile();
   if (!profile) return null;
   const supabase = await createClient();
-  const currentMonth = getAlgiersDateValues().month;
+  const { date, month: currentMonth } = getAlgiersDateValues();
   const selectedMonth = validSelectedMonth(requestedMonth, currentMonth);
 
-  const [plansResult, membersResult] = await Promise.all([
+  const [plansResult, membersResult, incomeResult, ratesResult] = await Promise.all([
     supabase
       .from("monthly_plans")
       .select("id, month_key, status, current_version_id")
@@ -639,9 +765,20 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
       .from("profiles")
       .select("id, display_name")
       .eq("family_id", profile.familyId),
+    supabase
+      .from("income_entries")
+      .select("amount, currency")
+      .eq("family_id", profile.familyId)
+      .eq("income_month", `${selectedMonth}-01`),
+    supabase
+      .from("exchange_rates")
+      .select("currency, rate_to_base, effective_date")
+      .eq("family_id", profile.familyId)
+      .lte("effective_date", date)
+      .order("effective_date", { ascending: false }),
   ]);
   ensureNoQueryErrors(
-    [plansResult, membersResult],
+    [plansResult, membersResult, incomeResult, ratesResult],
     "Monthly plans could not be loaded.",
   );
 
@@ -698,12 +835,49 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
     ) ??
     selectedPlan?.versions[0] ??
     null;
+  const { rates } = latestRates(ratesResult.data ?? []);
+  const incomeValuation = calculateDzdTotal(
+    (incomeResult.data ?? []).map((row) => ({
+      amount: Number(row.amount),
+      currency: row.currency as SupportedCurrency,
+    })),
+    rates,
+  );
+  const plannedAmounts =
+    currentVersion && incomeValuation.complete
+      ? {
+          essentials: calculatePlannedAmount(
+            incomeValuation.total,
+            currentVersion.allocation.essentials,
+          ),
+          personal: calculatePlannedAmount(
+            incomeValuation.total,
+            currentVersion.allocation.personal,
+          ),
+          savings: calculatePlannedAmount(
+            incomeValuation.total,
+            currentVersion.allocation.savings,
+          ),
+          investment: calculatePlannedAmount(
+            incomeValuation.total,
+            currentVersion.allocation.investment,
+          ),
+          reserve: calculatePlannedAmount(
+            incomeValuation.total,
+            currentVersion.allocation.reserve,
+          ),
+        }
+      : null;
 
   return {
     selectedMonth,
     selectedPlan,
     currentVersion,
     plans: summaries,
+    familyIncomeDzd: incomeValuation.complete ? incomeValuation.total : null,
+    incomeTotals: addTotals(incomeResult.data ?? []),
+    missingRateCurrencies: incomeValuation.missingCurrencies,
+    plannedAmounts,
     defaultAllocation: {
       essentials: 50,
       personal: 10,
@@ -870,5 +1044,343 @@ export async function getDashboardPageData() {
     savingsTotals: addTotals(ledger.filter((row) => row.type === "saving")),
     investmentTotals: addTotals(ledger.filter((row) => row.type === "investment")),
     goals: (goalsResult.data ?? []).map(mapSavingsGoal),
+  };
+}
+
+export async function getNetWorthPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+
+  const supabase = await createClient();
+  const { date, month, monthStart } = getAlgiersDateValues();
+  const [
+    accountsResult,
+    assetsResult,
+    investmentsResult,
+    liabilitiesResult,
+    ratesResult,
+    snapshotsResult,
+  ] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, type, currency, current_balance")
+      .eq("family_id", profile.familyId)
+      .eq("is_active", true),
+    supabase
+      .from("assets")
+      .select("id, name, asset_type, currency, current_value")
+      .eq("family_id", profile.familyId)
+      .eq("is_active", true),
+    supabase
+      .from("investments")
+      .select("id, name, type, currency, current_value")
+      .eq("family_id", profile.familyId),
+    supabase
+      .from("liabilities")
+      .select("id, name, type, currency, original_amount, paid_amount, status")
+      .eq("family_id", profile.familyId)
+      .eq("status", "active"),
+    supabase
+      .from("exchange_rates")
+      .select("currency, rate_to_base, effective_date")
+      .eq("family_id", profile.familyId)
+      .lte("effective_date", date)
+      .order("effective_date", { ascending: false }),
+    supabase
+      .from("net_worth_snapshots")
+      .select(
+        "id, snapshot_month, accounts_dzd, assets_dzd, investments_dzd, liabilities_dzd, total_assets_dzd, total_liabilities_dzd, net_worth_dzd, rates_snapshot, captured_at",
+      )
+      .eq("family_id", profile.familyId)
+      .order("snapshot_month", { ascending: false })
+      .limit(12),
+  ]);
+  ensureNoQueryErrors(
+    [
+      accountsResult,
+      assetsResult,
+      investmentsResult,
+      liabilitiesResult,
+      ratesResult,
+      snapshotsResult,
+    ],
+    "Net worth data could not be loaded.",
+  );
+
+  const { rates } = latestRates(ratesResult.data ?? []);
+  const accounts = calculateDzdTotal(
+    (accountsResult.data ?? []).map((row) => ({
+      amount: Number(row.current_balance),
+      currency: row.currency as SupportedCurrency,
+    })),
+    rates,
+  );
+  const assets = calculateDzdTotal(
+    (assetsResult.data ?? []).map((row) => ({
+      amount: Number(row.current_value),
+      currency: row.currency as SupportedCurrency,
+    })),
+    rates,
+  );
+  const investments = calculateDzdTotal(
+    (investmentsResult.data ?? []).map((row) => ({
+      amount: Number(row.current_value),
+      currency: row.currency as SupportedCurrency,
+    })),
+    rates,
+  );
+  const liabilities = calculateDzdTotal(
+    (liabilitiesResult.data ?? []).map((row) => ({
+      amount: Math.max(Number(row.original_amount) - Number(row.paid_amount), 0),
+      currency: row.currency as SupportedCurrency,
+    })),
+    rates,
+  );
+  const missingRateCurrencies = [
+    ...new Set([
+      ...accounts.missingCurrencies,
+      ...assets.missingCurrencies,
+      ...investments.missingCurrencies,
+      ...liabilities.missingCurrencies,
+    ]),
+  ].sort();
+  const complete = missingRateCurrencies.length === 0;
+  const totalAssets = accounts.total + assets.total + investments.total;
+  const snapshots: NetWorthSnapshot[] = (snapshotsResult.data ?? []).map((row) => ({
+    id: row.id,
+    month: row.snapshot_month.slice(0, 7),
+    accounts: Number(row.accounts_dzd),
+    assets: Number(row.assets_dzd),
+    investments: Number(row.investments_dzd),
+    liabilities: Number(row.liabilities_dzd),
+    totalAssets: Number(row.total_assets_dzd),
+    totalLiabilities: Number(row.total_liabilities_dzd),
+    netWorth: Number(row.net_worth_dzd),
+    rates: (row.rates_snapshot ?? {}) as Record<string, number>,
+    capturedAt: row.captured_at,
+  }));
+  const latestSnapshot = snapshots[0] ?? null;
+  const previousSnapshot = snapshots[1] ?? null;
+
+  return {
+    currentMonth: month,
+    currentMonthStart: monthStart,
+    complete,
+    missingRateCurrencies,
+    accounts: accounts.total,
+    assets: assets.total,
+    investments: investments.total,
+    totalAssets,
+    totalLiabilities: liabilities.total,
+    netWorth: complete ? totalAssets - liabilities.total : null,
+    snapshots,
+    currentMonthCaptured: snapshots.some((snapshot) => snapshot.month === month),
+    monthChange:
+      latestSnapshot && previousSnapshot
+        ? latestSnapshot.netWorth - previousSnapshot.netWorth
+        : null,
+  };
+}
+
+function validReportYear(value: string | undefined, fallback: string) {
+  if (!value || !/^20\d{2}$/.test(value)) return fallback;
+  return value;
+}
+
+export async function getReportsPageData(
+  requestedMonth?: string,
+  requestedYear?: string,
+) {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+
+  const supabase = await createClient();
+  const { date, month: currentMonth } = getAlgiersDateValues();
+  const selectedMonth = validSelectedMonth(requestedMonth, currentMonth);
+  const selectedYear = validReportYear(requestedYear, selectedMonth.slice(0, 4));
+  const yearStart = `${selectedYear}-01-01`;
+  const nextYearStart = `${Number(selectedYear) + 1}-01-01`;
+
+  const [
+    incomeResult,
+    expensesResult,
+    ledgerResult,
+    plansResult,
+    versionsResult,
+    ratesResult,
+    snapshotsResult,
+  ] = await Promise.all([
+    supabase
+      .from("income_entries")
+      .select("income_month, amount, currency")
+      .eq("family_id", profile.familyId)
+      .gte("income_month", yearStart)
+      .lt("income_month", nextYearStart),
+    supabase
+      .from("expense_entries")
+      .select("month_key, main_category, amount, currency")
+      .eq("family_id", profile.familyId)
+      .gte("month_key", yearStart)
+      .lt("month_key", nextYearStart),
+    supabase
+      .from("financial_transactions")
+      .select("month_key, type, amount, currency")
+      .eq("family_id", profile.familyId)
+      .in("type", ["saving", "investment"])
+      .gte("month_key", yearStart)
+      .lt("month_key", nextYearStart),
+    supabase
+      .from("monthly_plans")
+      .select("id, month_key, current_version_id")
+      .eq("family_id", profile.familyId)
+      .gte("month_key", yearStart)
+      .lt("month_key", nextYearStart),
+    supabase
+      .from("monthly_plan_versions")
+      .select(
+        "id, version_number, essentials_percent, personal_percent, savings_percent, investment_percent",
+      )
+      .eq("family_id", profile.familyId),
+    supabase
+      .from("exchange_rates")
+      .select("currency, rate_to_base, effective_date")
+      .eq("family_id", profile.familyId)
+      .lte("effective_date", date)
+      .order("effective_date", { ascending: false }),
+    supabase
+      .from("net_worth_snapshots")
+      .select("snapshot_month, net_worth_dzd")
+      .eq("family_id", profile.familyId)
+      .gte("snapshot_month", yearStart)
+      .lt("snapshot_month", nextYearStart),
+  ]);
+  ensureNoQueryErrors(
+    [
+      incomeResult,
+      expensesResult,
+      ledgerResult,
+      plansResult,
+      versionsResult,
+      ratesResult,
+      snapshotsResult,
+    ],
+    "Monthly reports could not be loaded.",
+  );
+
+  const { rates } = latestRates(ratesResult.data ?? []);
+  const plansByMonth = new Map(
+    (plansResult.data ?? []).map((plan) => [
+      plan.month_key.slice(0, 7),
+      plan.current_version_id,
+    ]),
+  );
+  const versionsById = new Map(
+    (versionsResult.data ?? []).map((version) => [version.id, version]),
+  );
+  const snapshotsByMonth = new Map(
+    (snapshotsResult.data ?? []).map((snapshot) => [
+      snapshot.snapshot_month.slice(0, 7),
+      Number(snapshot.net_worth_dzd),
+    ]),
+  );
+  const missingCurrencies = new Set<string>();
+  const valueRows = (rows: Array<{ amount: number | string; currency: string }>) => {
+    const valuation = calculateDzdTotal(
+      rows.map((row) => ({
+        amount: Number(row.amount),
+        currency: row.currency as SupportedCurrency,
+      })),
+      rates,
+    );
+    valuation.missingCurrencies.forEach((currency) => missingCurrencies.add(currency));
+    return valuation.total;
+  };
+
+  const months: MonthlyReportRow[] = Array.from({ length: 12 }, (_, index) => {
+    const month = `${selectedYear}-${String(index + 1).padStart(2, "0")}`;
+    const incomeRows = (incomeResult.data ?? []).filter((row) =>
+      row.income_month.startsWith(month),
+    );
+    const expenseRows = (expensesResult.data ?? []).filter((row) =>
+      row.month_key.startsWith(month),
+    );
+    const ledgerRows = (ledgerResult.data ?? []).filter((row) =>
+      row.month_key.startsWith(month),
+    );
+    const consumptiveRows = expenseRows.filter(
+      (row) => row.main_category !== "savings" && row.main_category !== "investment",
+    );
+    const savingRows = ledgerRows.filter((row) => row.type === "saving");
+    const investmentRows = ledgerRows.filter((row) => row.type === "investment");
+    const income = valueRows(incomeRows);
+    const expenses = valueRows(consumptiveRows);
+    const essentials = valueRows(
+      expenseRows.filter((row) => row.main_category === "essentials"),
+    );
+    const personal = valueRows(
+      expenseRows.filter((row) => row.main_category === "personal"),
+    );
+    const savings = valueRows(savingRows);
+    const investments = valueRows(investmentRows);
+    const flow = calculateMonthlyFlow({
+      income,
+      expenses,
+      savings,
+      investments,
+    });
+    const currentVersionId = plansByMonth.get(month);
+    const version = currentVersionId ? versionsById.get(currentVersionId) : undefined;
+
+    return {
+      month,
+      income,
+      expenses,
+      essentials,
+      personal,
+      savings,
+      investments,
+      remaining: flow.remaining,
+      savingRate: flow.savingRate,
+      plannedEssentials: version
+        ? calculatePlannedAmount(income, Number(version.essentials_percent))
+        : null,
+      plannedPersonal: version
+        ? calculatePlannedAmount(income, Number(version.personal_percent))
+        : null,
+      plannedSavings: version
+        ? calculatePlannedAmount(income, Number(version.savings_percent))
+        : null,
+      plannedInvestments: version
+        ? calculatePlannedAmount(income, Number(version.investment_percent))
+        : null,
+      planVersion: version?.version_number ?? null,
+      netWorth: snapshotsByMonth.get(month) ?? null,
+      sourceCounts: {
+        income: incomeRows.length,
+        expenses: consumptiveRows.length,
+        savings: savingRows.length,
+        investments: investmentRows.length,
+      },
+    };
+  });
+  const selectedSummary =
+    months.find((row) => row.month === selectedMonth) ?? months[0];
+
+  return {
+    selectedMonth,
+    selectedYear,
+    selectedSummary,
+    months,
+    missingRateCurrencies: [...missingCurrencies].sort(),
+    annualTotals: months.reduce(
+      (totals, row) => ({
+        income: totals.income + row.income,
+        expenses: totals.expenses + row.expenses,
+        savings: totals.savings + row.savings,
+        investments: totals.investments + row.investments,
+        remaining: totals.remaining + row.remaining,
+      }),
+      { income: 0, expenses: 0, savings: 0, investments: 0, remaining: 0 },
+    ),
   };
 }
