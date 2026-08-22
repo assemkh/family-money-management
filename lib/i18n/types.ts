@@ -1,0 +1,94 @@
+export type Messages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  brand: {
+    name: string;
+    monogram: string;
+    subtitle: string;
+  };
+  navigation: {
+    dashboard: string;
+    monthlyPlan: string;
+    expenses: string;
+    income: string;
+    accounts: string;
+    goals: string;
+    investments: string;
+    liabilities: string;
+    transfers: string;
+    recurring: string;
+    netWorth: string;
+    reports: string;
+    settings: string;
+    add: string;
+    more: string;
+    comingSoon: string;
+  };
+  shell: {
+    familyName: string;
+    overview: string;
+    currentMonth: string;
+    privateWorkspace: string;
+    signedIn: string;
+    setupMode: string;
+    skipToContent: string;
+    theme: string;
+    themeLight: string;
+    themeDark: string;
+    themeSystem: string;
+    primaryNavigation: string;
+    mobileNavigation: string;
+    loading: string;
+  };
+  dashboard: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    statusTitle: string;
+    statusDescription: string;
+    ready: string;
+    needsSetup: string;
+    nextPhase: string;
+    applicationTitle: string;
+    applicationDescription: string;
+    supabaseTitle: string;
+    supabaseConfigured: string;
+    supabaseUnconfigured: string;
+    securityTitle: string;
+    securityDescription: string;
+    nextTitle: string;
+    nextDescription: string;
+    stepDatabase: string;
+    stepHousehold: string;
+    stepAccess: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  };
+  auth: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    username: string;
+    usernamePlaceholder: string;
+    password: string;
+    passwordPlaceholder: string;
+    remember: string;
+    forgotPassword: string;
+    signIn: string;
+    pendingTitle: string;
+    pendingDescription: string;
+    configurationTitle: string;
+    configurationDescription: string;
+    backToFoundation: string;
+  };
+  feedback: {
+    unexpectedTitle: string;
+    unexpectedDescription: string;
+    retry: string;
+    notFoundTitle: string;
+    notFoundDescription: string;
+    goHome: string;
+  };
+};

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { IBM_Plex_Sans, Newsreader, Noto_Sans_Arabic } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+
+import { defaultLocale, getDirection, getMessages } from "@/lib/i18n/config";
+
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -10,16 +13,31 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: {
-    default: "Family Money Management",
-    template: "%s | Family Money Management",
+    default: getMessages().metadata.title,
+    template: `%s | ${getMessages().metadata.title}`,
   },
-  description: "A private home for our family budget, accounts, and goals.",
+  description: getMessages().metadata.description,
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bodyFont = IBM_Plex_Sans({
+  variable: "--font-body",
+  weight: ["400", "500", "600"],
   display: "swap",
   subsets: ["latin"],
+});
+
+const displayFont = Newsreader({
+  variable: "--font-display",
+  weight: ["500", "600"],
+  display: "swap",
+  subsets: ["latin"],
+});
+
+const arabicFont = Noto_Sans_Arabic({
+  variable: "--font-arabic",
+  weight: ["400", "500", "600"],
+  display: "swap",
+  subsets: ["arabic"],
 });
 
 export default function RootLayout({
@@ -28,8 +46,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+    <html
+      lang={defaultLocale}
+      dir={getDirection(defaultLocale)}
+      suppressHydrationWarning
+    >
+      <body
+        className={`${bodyFont.variable} ${displayFont.variable} ${arabicFont.variable} font-sans`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

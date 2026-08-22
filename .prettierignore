@@ -1,0 +1,7 @@
+.next
+.vercel
+coverage
+node_modules
+package-lock.json
+docs/starting_plan.md
+supabase/.temp

@@ -1,0 +1,105 @@
+import type { Messages } from "@/lib/i18n/types";
+
+export const messages = {
+  metadata: {
+    title: "إدارة أموال العائلة",
+    description: "مساحة خاصة لميزانية العائلة وحساباتها وأهدافها.",
+  },
+  brand: {
+    name: "أموال العائلة",
+    monogram: "ع",
+    subtitle: "مساحتنا المالية المشتركة",
+  },
+  navigation: {
+    dashboard: "لوحة المتابعة",
+    monthlyPlan: "الخطة الشهرية",
+    expenses: "المصاريف",
+    income: "الدخل",
+    accounts: "الحسابات والأصول",
+    goals: "الأهداف",
+    investments: "الاستثمارات",
+    liabilities: "الالتزامات",
+    transfers: "التحويلات",
+    recurring: "المعاملات المتكررة",
+    netWorth: "صافي الثروة",
+    reports: "التقارير",
+    settings: "الإعدادات",
+    add: "إضافة",
+    more: "المزيد",
+    comingSoon: "قريباً",
+  },
+  shell: {
+    familyName: "عائلتنا",
+    overview: "نظرة عامة",
+    currentMonth: "الشهر الحالي",
+    privateWorkspace: "مساحة خاصة",
+    signedIn: "تم التحقق من الجلسة",
+    setupMode: "وضع التأسيس",
+    skipToContent: "الانتقال إلى المحتوى",
+    theme: "تغيير ألوان الواجهة",
+    themeLight: "فاتح",
+    themeDark: "داكن",
+    themeSystem: "النظام",
+    primaryNavigation: "التنقل الرئيسي",
+    mobileNavigation: "التنقل على الهاتف",
+    loading: "جارٍ تحميل لوحة المتابعة",
+  },
+  dashboard: {
+    eyebrow: "التأسيس · المرحلة 1A",
+    title: "طريقة أهدأ لإدارة المال معاً.",
+    description:
+      "المساحة الخاصة جاهزة. تبدأ البيانات المالية الحقيقية بعد تثبيت قاعدة بيانات العائلة وسياسات الحماية.",
+    statusTitle: "حالة التأسيس",
+    statusDescription:
+      "كل ما يظهر هنا يعكس حالة المشروع الحقيقية، من دون أرصدة أو معاملات تجريبية.",
+    ready: "جاهز",
+    needsSetup: "يحتاج إعداداً",
+    nextPhase: "المرحلة القادمة",
+    applicationTitle: "هيكل التطبيق",
+    applicationDescription:
+      "التنقل المتجاوب ونظام التصميم وتجربة الهاتف والمكونات المتاحة جاهزة.",
+    supabaseTitle: "بيئة Supabase",
+    supabaseConfigured:
+      "بيانات الاتصال العامة مضبوطة والتحقق من الجلسة على الخادم مفعل.",
+    supabaseUnconfigured:
+      "أضف رابط المشروع والمفتاح العام إلى .env.local لتفعيل التحقق من الجلسة.",
+    securityTitle: "حماية العائلة",
+    securityDescription:
+      "الجداول وعزل بيانات العائلة والأدوار وRLS وإنشاء المالك ضمن المرحلة 1B.",
+    nextTitle: "التالي: تأمين مساحة العائلة",
+    nextDescription: "تحول المرحلة 1B هذا الهيكل إلى تطبيق خاص ومعزول لكل عائلة.",
+    stepDatabase: "إنشاء قاعدة البيانات المبنية حول العائلة",
+    stepHousehold: "إضافة RLS وصلاحيات المالك والعضو",
+    stepAccess: "إنشاء تسجيل الدخول وإجبار تغيير كلمة المرور",
+    emptyTitle: "لا توجد بيانات مالية بعد، وهذا مقصود.",
+    emptyDescription:
+      "الأرصدة والدخل والمصاريف الأولى ستأتي من قاعدة بيانات عائلتك الآمنة، وليس من محتوى تجريبي.",
+  },
+  auth: {
+    eyebrow: "دخول خاص بالعائلة",
+    title: "مرحباً بعودتك.",
+    description: "مكان آمن واحد للقرارات المالية التي تتخذانها معاً.",
+    username: "اسم المستخدم",
+    usernamePlaceholder: "أدخل اسم المستخدم",
+    password: "كلمة المرور",
+    passwordPlaceholder: "أدخل كلمة المرور",
+    remember: "تذكر هذا الجهاز",
+    forgotPassword: "نسيت كلمة المرور؟",
+    signIn: "دخول آمن",
+    pendingTitle: "إعداد الحساب الآمن هو الخطوة التالية",
+    pendingDescription:
+      "يتم تنفيذ الدخول باسم المستخدم وحساب المالك في المرحلة 1B. يبقى النموذج معطلاً حتى تكتمل طبقة الحماية.",
+    configurationTitle: "اربط Supabase أولاً",
+    configurationDescription:
+      "انسخ .env.example إلى .env.local ثم أضف رابط مشروع Supabase والمفتاح العام.",
+    backToFoundation: "عرض حالة التأسيس",
+  },
+  feedback: {
+    unexpectedTitle: "حدثت مشكلة غير متوقعة.",
+    unexpectedDescription: "بياناتك آمنة. حاول مرة أخرى أو ارجع إلى لوحة المتابعة.",
+    retry: "حاول مرة أخرى",
+    notFoundTitle: "هذه الصفحة ليست جزءاً من مساحتك المالية بعد.",
+    notFoundDescription: "قد يكون العنوان غير صحيح أو أن الميزة ما زالت ضمن الخطة.",
+    goHome: "العودة إلى لوحة المتابعة",
+  },
+} satisfies Messages;
