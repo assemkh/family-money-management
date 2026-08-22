@@ -1,0 +1,2 @@
+-- Add development-only seed data here once the household schema exists.
+-- Never add real family financial data to this file.
