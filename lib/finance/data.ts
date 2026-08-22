@@ -2,6 +2,7 @@ import "server-only";
 
 import { readCurrentProfile } from "@/lib/auth/profile";
 import { getAlgiersDateValues } from "@/lib/formatting/date";
+import { convertToDzd, type ExchangeRateMap } from "@/lib/finance/calculations";
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,6 +38,28 @@ export type AccountOption = {
   id: string;
   name: string;
   currency: SupportedCurrency;
+  currentBalance: number;
+};
+
+export type AccountSummary = AccountOption & {
+  type: string;
+  dzdValue: number | null;
+};
+
+export type ManualExchangeRate = {
+  currency: "EUR" | "USD";
+  rate: number | null;
+  effectiveDate: string | null;
+};
+
+export type RecentTransfer = {
+  id: string;
+  transferDate: string;
+  amount: number;
+  currency: SupportedCurrency;
+  note: string | null;
+  fromAccountName: string;
+  toAccountName: string;
 };
 
 export type RecentExpense = {
@@ -172,7 +195,7 @@ export async function getExpensePageData() {
         .order("name"),
       supabase
         .from("accounts")
-        .select("id, name, currency")
+        .select("id, name, currency, current_balance")
         .eq("family_id", profile.familyId)
         .eq("is_active", true)
         .order("sort_order")
@@ -220,6 +243,7 @@ export async function getExpensePageData() {
       id: account.id,
       name: account.name,
       currency: account.currency as SupportedCurrency,
+      currentBalance: Number(account.current_balance),
     })),
     recent: (recentResult.data ?? []).map((entry): RecentExpense => {
       const category = entry.subcategory_id
@@ -240,5 +264,150 @@ export async function getExpensePageData() {
         memberName: memberNames.get(entry.member_id) ?? "Family member",
       };
     }),
+  };
+}
+
+function latestRates(
+  rows: Array<{
+    currency: string;
+    rate_to_base: number | string;
+    effective_date: string;
+  }>,
+) {
+  const rates: ExchangeRateMap = {};
+  const details = new Map<"EUR" | "USD", ManualExchangeRate>();
+
+  rows.forEach((row) => {
+    if (row.currency !== "EUR" && row.currency !== "USD") return;
+    if (details.has(row.currency)) return;
+
+    const rate = Number(row.rate_to_base);
+    rates[row.currency] = rate;
+    details.set(row.currency, {
+      currency: row.currency,
+      rate,
+      effectiveDate: row.effective_date,
+    });
+  });
+
+  return { rates, details };
+}
+
+export async function getAccountsPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+
+  const supabase = await createClient();
+  const { date } = getAlgiersDateValues();
+  const [accountsResult, ratesResult] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, type, currency, current_balance")
+      .eq("family_id", profile.familyId)
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("exchange_rates")
+      .select("currency, rate_to_base, effective_date")
+      .eq("family_id", profile.familyId)
+      .lte("effective_date", date)
+      .order("effective_date", { ascending: false }),
+  ]);
+
+  ensureNoQueryErrors(
+    [accountsResult, ratesResult],
+    "Account data could not be loaded.",
+  );
+
+  const { rates, details } = latestRates(ratesResult.data ?? []);
+  const accounts = (accountsResult.data ?? []).map((account): AccountSummary => {
+    const currency = account.currency as SupportedCurrency;
+    const currentBalance = Number(account.current_balance);
+
+    return {
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      currency,
+      currentBalance,
+      dzdValue: convertToDzd(currentBalance, currency, rates),
+    };
+  });
+
+  const knownDzdValue = accounts.reduce(
+    (total, account) => total + (account.dzdValue ?? 0),
+    0,
+  );
+  const missingRateCurrencies = [
+    ...new Set(
+      accounts
+        .filter((account) => account.currency !== "DZD" && account.dzdValue === null)
+        .map((account) => account.currency),
+    ),
+  ];
+
+  return {
+    accounts,
+    defaultDate: date,
+    knownDzdValue,
+    missingRateCurrencies,
+    exchangeRates: (["EUR", "USD"] as const).map(
+      (currency): ManualExchangeRate =>
+        details.get(currency) ?? { currency, rate: null, effectiveDate: null },
+    ),
+  };
+}
+
+export async function getTransfersPageData() {
+  const profile = await readCurrentProfile();
+  if (!profile) return null;
+
+  const supabase = await createClient();
+  const { date } = getAlgiersDateValues();
+  const [accountsResult, transfersResult] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, currency, current_balance")
+      .eq("family_id", profile.familyId)
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("transfers")
+      .select(
+        "id, transfer_date, from_account_id, to_account_id, amount, currency, note",
+      )
+      .eq("family_id", profile.familyId)
+      .order("transfer_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  ensureNoQueryErrors(
+    [accountsResult, transfersResult],
+    "Transfer data could not be loaded.",
+  );
+
+  const accounts = (accountsResult.data ?? []).map((account): AccountOption => ({
+    id: account.id,
+    name: account.name,
+    currency: account.currency as SupportedCurrency,
+    currentBalance: Number(account.current_balance),
+  }));
+  const accountNames = new Map(accounts.map((account) => [account.id, account.name]));
+
+  return {
+    accounts,
+    defaultDate: date,
+    recent: (transfersResult.data ?? []).map((transfer): RecentTransfer => ({
+      id: transfer.id,
+      transferDate: transfer.transfer_date,
+      amount: Number(transfer.amount),
+      currency: transfer.currency as SupportedCurrency,
+      note: transfer.note,
+      fromAccountName: accountNames.get(transfer.from_account_id) ?? "Source account",
+      toAccountName: accountNames.get(transfer.to_account_id) ?? "Destination account",
+    })),
   };
 }

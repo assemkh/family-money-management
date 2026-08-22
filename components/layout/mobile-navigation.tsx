@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleDollarSign, House, Menu, Plus, ReceiptText } from "lucide-react";
+import { CircleDollarSign, House, Plus, ReceiptText, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -58,26 +58,18 @@ export function MobileNavigation({ messages }: MobileNavigationProps) {
         <CircleDollarSign aria-hidden="true" className="size-[1.1rem]" />
         <span className="max-w-16 truncate">{messages.navigation.income}</span>
       </Link>
-      <DisabledMobileItem icon={Menu} label={messages.navigation.more} />
+      <Link
+        href="/accounts"
+        className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-medium transition ${
+          pathname === "/accounts" || pathname === "/transfers"
+            ? "text-white"
+            : "hover:text-white"
+        }`}
+        aria-current={pathname === "/accounts" ? "page" : undefined}
+      >
+        <WalletCards aria-hidden="true" className="size-[1.1rem]" />
+        <span className="max-w-16 truncate">{messages.navigation.accounts}</span>
+      </Link>
     </nav>
-  );
-}
-
-function DisabledMobileItem({
-  icon: Icon,
-  label,
-}: {
-  icon: typeof House;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      disabled
-      className="flex min-h-12 cursor-not-allowed flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-medium opacity-70"
-    >
-      <Icon aria-hidden="true" className="size-[1.1rem]" />
-      <span className="max-w-16 truncate">{label}</span>
-    </button>
   );
 }

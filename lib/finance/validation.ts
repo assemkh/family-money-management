@@ -10,6 +10,24 @@ const amountSchema = z
   .transform((value) => value.replace(",", "."))
   .refine((value) => Number(value) > 0, "Amount must be greater than zero.");
 
+const balanceSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter the current balance.")
+  .regex(
+    /^\d{1,15}(?:[.,]\d{1,2})?$/,
+    "Use a non-negative balance with up to 2 decimals.",
+  )
+  .transform((value) => value.replace(",", "."));
+
+const exchangeRateSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter an exchange rate.")
+  .regex(/^\d{1,9}(?:[.,]\d{1,6})?$/, "Use a positive rate with up to 6 decimals.")
+  .transform((value) => value.replace(",", "."))
+  .refine((value) => Number(value) > 0, "Rate must be greater than zero.");
+
 const noteSchema = z
   .string()
   .trim()
@@ -47,6 +65,30 @@ export const expenseEntrySchema = z.object({
   currency: supportedCurrencySchema,
   accountId: optionalUuidSchema,
   note: noteSchema,
+});
+
+export const accountBalanceSchema = z.object({
+  accountId: z.uuid("Choose a valid account."),
+  balance: balanceSchema,
+});
+
+export const transferEntrySchema = z
+  .object({
+    fromAccountId: z.uuid("Choose a source account."),
+    toAccountId: z.uuid("Choose a destination account."),
+    transferDate: dateSchema,
+    amount: amountSchema,
+    note: noteSchema,
+  })
+  .refine((value) => value.fromAccountId !== value.toAccountId, {
+    path: ["toAccountId"],
+    message: "Choose a different destination account.",
+  });
+
+export const manualExchangeRateSchema = z.object({
+  currency: z.enum(["EUR", "USD"]),
+  rate: exchangeRateSchema,
+  effectiveDate: dateSchema,
 });
 
 export type SupportedCurrency = z.infer<typeof supportedCurrencySchema>;

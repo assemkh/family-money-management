@@ -7,6 +7,8 @@ import { createExpenseEntryAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import type { AccountOption, ExpenseCategoryOption } from "@/lib/finance/data";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SupportedCurrency } from "@/lib/finance/validation";
+import { formatMoney } from "@/lib/formatting/money";
 
 const fieldClass =
   "h-12 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-55";
@@ -37,6 +39,8 @@ export function ExpenseEntryForm({
     initialFinanceActionState,
   );
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [currency, setCurrency] = useState<SupportedCurrency>("DZD");
+  const [accountId, setAccountId] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const groupedCategories = Object.entries(
@@ -77,7 +81,18 @@ export function ExpenseEntryForm({
           />
           <select
             name="currency"
-            defaultValue="DZD"
+            value={currency}
+            onChange={(event) => {
+              const nextCurrency = event.target.value as SupportedCurrency;
+              setCurrency(nextCurrency);
+              if (
+                accountId &&
+                accounts.find((account) => account.id === accountId)?.currency !==
+                  nextCurrency
+              ) {
+                setAccountId("");
+              }
+            }}
             aria-label="Expense currency"
             disabled={pending || categories.length === 0}
             className="absolute end-2 top-2 h-12 rounded-xl border bg-muted/70 px-2.5 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
@@ -170,7 +185,8 @@ export function ExpenseEntryForm({
           <select
             id="expense-account"
             name="accountId"
-            defaultValue=""
+            value={accountId}
+            onChange={(event) => setAccountId(event.target.value)}
             disabled={pending || categories.length === 0}
             aria-invalid={Boolean(state.fieldErrors?.accountId)}
             aria-describedby="expense-account-help expense-account-error"
@@ -178,13 +194,21 @@ export function ExpenseEntryForm({
           >
             <option value="">Not linked</option>
             {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name} · {account.currency}
+              <option
+                key={account.id}
+                value={account.id}
+                disabled={account.currency !== currency}
+              >
+                {account.name} ·{" "}
+                {formatMoney(account.currentBalance, {
+                  currency: account.currency,
+                  maximumFractionDigits: 2,
+                })}
               </option>
             ))}
           </select>
           <p id="expense-account-help" className="mt-1.5 text-xs text-muted-foreground">
-            Balance automation is part of the Accounts slice later in Phase 2A.
+            Saving atomically debits the selected same-currency account.
           </p>
           <FieldError
             id="expense-account-error"
