@@ -60,6 +60,24 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 
 Phase 1B adds the household schema, Row Level Security policies, and the one-time owner bootstrap flow.
 
+### Phase 1B database workflow
+
+The first Phase 1B migration establishes the family/profile identity boundary and its RLS policies. To reproduce and test it locally:
+
+```bash
+npm run supabase:start
+npx supabase db reset
+npm run supabase:test:db
+```
+
+After applying the migration to a controlled environment, populate the server-only bootstrap values in `.env.local` and create the initial owner:
+
+```bash
+npm run supabase:bootstrap-owner
+```
+
+The bootstrap command must never run with a secret key exposed through a `NEXT_PUBLIC_` variable. See [the database foundation](docs/architecture/database.md) for the security boundaries and current Phase 1B scope.
+
 ## Quality checks
 
 ```bash

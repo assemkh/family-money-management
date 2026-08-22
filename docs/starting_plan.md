@@ -222,7 +222,7 @@ Do not implement an old localStorage-only authentication flow.
 Seed a first household owner account with:
 
 - Username: `assemkh`
-- Initial password: `admin123`
+- Initial password: configured through the `BOOTSTRAP_ADMIN_PASSWORD` secret
 
 This credential is a bootstrap credential only.
 
@@ -2144,7 +2144,7 @@ Tasks:
 - implement owner/member roles
 - create bootstrap owner account flow
 - set username `assemkh`
-- set bootstrap password `admin123` through secret configuration only
+- set bootstrap password through secret configuration only
 - enforce first-login password change
 - implement username login resolution
 - implement password reset
