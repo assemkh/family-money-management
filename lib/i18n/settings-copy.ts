@@ -65,6 +65,49 @@ export type SettingsPageCopy = {
     save: string;
     saving: string;
   };
+  allocationForm: {
+    total: string;
+    fields: Record<AllocationField, string>;
+    save: string;
+    saving: string;
+  };
+  healthForm: {
+    fields: Record<HealthField, FieldCopy>;
+    save: string;
+    saving: string;
+  };
+  dashboardForm: {
+    kpiDensity: string;
+    fullCards: string;
+    compactCards: string;
+    defaultMonth: string;
+    currentMonth: string;
+    previousMonth: string;
+    chartRange: string;
+    months: string;
+    visibleAreas: string;
+    widgets: Record<DashboardWidget, FieldCopy>;
+    save: string;
+    saving: string;
+  };
+  exchangeRateForm: {
+    inDzd: string;
+    currentSince: string;
+    noRate: string;
+    rate: string;
+    effectiveDate: string;
+    save: string;
+    saving: string;
+  };
+  securityControls: {
+    changePassword: string;
+    changePasswordDescription: string;
+    revokeOthers: string;
+    revokeOthersDescription: string;
+    revoking: string;
+    signOutEverywhere: string;
+    signOutEverywhereDescription: string;
+  };
 };
 
 type SectionCopy = {
@@ -72,6 +115,26 @@ type SectionCopy = {
   title: string;
   description: string;
 };
+
+type FieldCopy = {
+  label: string;
+  description: string;
+};
+
+type AllocationField = "essentials" | "personal" | "savings" | "investment" | "reserve";
+
+type HealthField =
+  | "positiveSavingRate"
+  | "neutralSavingRate"
+  | "positivePlanVariancePercent"
+  | "warningPlanVariancePercent"
+  | "essentialsWarningRatio"
+  | "positiveInvestmentRate"
+  | "debtWarningRatio"
+  | "goalProgressTarget";
+
+type DashboardWidget =
+  "showHealth" | "showPlan" | "showBreakdowns" | "showNetWorth" | "showGoals";
 
 const english = {
   hero: {
@@ -185,6 +248,111 @@ const english = {
     save: "Save family preferences",
     saving: "Saving…",
   },
+  allocationForm: {
+    total: "Default allocation total",
+    fields: {
+      essentials: "Essentials",
+      personal: "Personal",
+      savings: "Savings",
+      investment: "Investments",
+      reserve: "Reserve",
+    },
+    save: "Save planning defaults",
+    saving: "Saving…",
+  },
+  healthForm: {
+    fields: {
+      positiveSavingRate: {
+        label: "Healthy saving rate",
+        description: "Green at or above this rate",
+      },
+      neutralSavingRate: {
+        label: "Saving watch level",
+        description: "Amber below this rate",
+      },
+      positivePlanVariancePercent: {
+        label: "Aligned plan gap",
+        description: "Green at or below this gap",
+      },
+      warningPlanVariancePercent: {
+        label: "Plan warning gap",
+        description: "Red above this gap",
+      },
+      essentialsWarningRatio: {
+        label: "Essentials warning",
+        description: "Watch when essentials exceed income share",
+      },
+      positiveInvestmentRate: {
+        label: "Healthy investment rate",
+        description: "Target invested share of income",
+      },
+      debtWarningRatio: {
+        label: "Debt warning ratio",
+        description: "Watch debt payments above income share",
+      },
+      goalProgressTarget: {
+        label: "Goal progress target",
+        description: "On-track completion percentage",
+      },
+    },
+    save: "Save health thresholds",
+    saving: "Saving…",
+  },
+  dashboardForm: {
+    kpiDensity: "KPI density",
+    fullCards: "Full cards",
+    compactCards: "Compact cards",
+    defaultMonth: "Default month",
+    currentMonth: "Current month",
+    previousMonth: "Previous month",
+    chartRange: "Chart range",
+    months: "months",
+    visibleAreas: "Visible dashboard areas",
+    widgets: {
+      showHealth: {
+        label: "Financial-health signals",
+        description: "Status cards beside the money-flow chart.",
+      },
+      showPlan: {
+        label: "Plan vs actual",
+        description: "Monthly allocation targets compared with real activity.",
+      },
+      showBreakdowns: {
+        label: "Breakdown charts",
+        description: "Expense and asset-allocation composition.",
+      },
+      showNetWorth: {
+        label: "Net-worth trend",
+        description: "Historical snapshot direction.",
+      },
+      showGoals: {
+        label: "Savings goals",
+        description: "Shared milestone progress at the bottom of the dashboard.",
+      },
+    },
+    save: "Save dashboard preferences",
+    saving: "Saving…",
+  },
+  exchangeRateForm: {
+    inDzd: "in DZD",
+    currentSince: "Current since",
+    noRate: "No manual rate yet",
+    rate: "Rate",
+    effectiveDate: "Effective date",
+    save: "Save rate",
+    saving: "Saving…",
+  },
+  securityControls: {
+    changePassword: "Change password",
+    changePasswordDescription: "Replace your current password and keep this session.",
+    revokeOthers: "Revoke other sessions",
+    revokeOthersDescription:
+      "Keep this device signed in and remove every other session.",
+    revoking: "Revoking…",
+    signOutEverywhere: "Sign out everywhere",
+    signOutEverywhereDescription:
+      "End this session and every other session for your account.",
+  },
 } satisfies SettingsPageCopy;
 
 const arabic = {
@@ -297,6 +465,109 @@ const arabic = {
     dateFormat: "تنسيق التاريخ",
     save: "حفظ تفضيلات العائلة",
     saving: "جارٍ الحفظ…",
+  },
+  allocationForm: {
+    total: "إجمالي التوزيع الافتراضي",
+    fields: {
+      essentials: "الأساسيات",
+      personal: "المصاريف الشخصية",
+      savings: "الادخار",
+      investment: "الاستثمارات",
+      reserve: "الاحتياطي",
+    },
+    save: "حفظ إعدادات التخطيط",
+    saving: "جارٍ الحفظ…",
+  },
+  healthForm: {
+    fields: {
+      positiveSavingRate: {
+        label: "معدل الادخار الجيد",
+        description: "أخضر عند هذا المعدل أو أعلى",
+      },
+      neutralSavingRate: {
+        label: "مستوى متابعة الادخار",
+        description: "كهرماني تحت هذا المعدل",
+      },
+      positivePlanVariancePercent: {
+        label: "فارق الخطة المتوازن",
+        description: "أخضر عند هذا الفارق أو أقل",
+      },
+      warningPlanVariancePercent: {
+        label: "فارق تحذير الخطة",
+        description: "أحمر فوق هذا الفارق",
+      },
+      essentialsWarningRatio: {
+        label: "تحذير الأساسيات",
+        description: "متابعة عندما تتجاوز الأساسيات حصتها من الدخل",
+      },
+      positiveInvestmentRate: {
+        label: "معدل الاستثمار الجيد",
+        description: "الحصة المستهدفة للاستثمار من الدخل",
+      },
+      debtWarningRatio: {
+        label: "نسبة تحذير الديون",
+        description: "متابعة أقساط الديون عند تجاوز حصتها من الدخل",
+      },
+      goalProgressTarget: {
+        label: "هدف تقدم الادخار",
+        description: "نسبة الإنجاز الموافقة للمسار",
+      },
+    },
+    save: "حفظ حدود الصحة المالية",
+    saving: "جارٍ الحفظ…",
+  },
+  dashboardForm: {
+    kpiDensity: "كثافة المؤشرات",
+    fullCards: "بطاقات كاملة",
+    compactCards: "بطاقات مختصرة",
+    defaultMonth: "الشهر الافتراضي",
+    currentMonth: "الشهر الحالي",
+    previousMonth: "الشهر السابق",
+    chartRange: "مدى الرسم البياني",
+    months: "أشهر",
+    visibleAreas: "أقسام لوحة المتابعة الظاهرة",
+    widgets: {
+      showHealth: {
+        label: "مؤشرات الصحة المالية",
+        description: "بطاقات الحالة بجانب مخطط التدفق المالي.",
+      },
+      showPlan: {
+        label: "الخطة مقابل الفعلي",
+        description: "مقارنة أهداف التوزيع الشهرية بالنشاط الفعلي.",
+      },
+      showBreakdowns: {
+        label: "رسوم التوزيع",
+        description: "تركيبة المصاريف وتوزيع الأصول.",
+      },
+      showNetWorth: {
+        label: "اتجاه صافي الثروة",
+        description: "اتجاه اللقطات المالية التاريخية.",
+      },
+      showGoals: {
+        label: "أهداف الادخار",
+        description: "تقدم الأهداف المشتركة في أسفل لوحة المتابعة.",
+      },
+    },
+    save: "حفظ تفضيلات لوحة المتابعة",
+    saving: "جارٍ الحفظ…",
+  },
+  exchangeRateForm: {
+    inDzd: "بالدينار الجزائري",
+    currentSince: "ساري منذ",
+    noRate: "لم يُدخل سعر يدوي بعد",
+    rate: "السعر",
+    effectiveDate: "تاريخ السريان",
+    save: "حفظ السعر",
+    saving: "جارٍ الحفظ…",
+  },
+  securityControls: {
+    changePassword: "تغيير كلمة المرور",
+    changePasswordDescription: "استبدل كلمة المرور الحالية مع إبقاء هذه الجلسة مفتوحة.",
+    revokeOthers: "إلغاء الجلسات الأخرى",
+    revokeOthersDescription: "أبقِ هذا الجهاز مسجلاً للدخول وألغِ كل الجلسات الأخرى.",
+    revoking: "جارٍ الإلغاء…",
+    signOutEverywhere: "تسجيل الخروج من كل الأجهزة",
+    signOutEverywhereDescription: "أنه هذه الجلسة وكل الجلسات الأخرى المرتبطة بحسابك.",
   },
 } satisfies SettingsPageCopy;
 

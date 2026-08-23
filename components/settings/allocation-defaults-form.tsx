@@ -6,21 +6,24 @@ import { useActionState, useMemo, useState } from "react";
 import { updateAllocationDefaultsAction } from "@/app/actions/settings";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 import type { AllocationDefaults } from "@/lib/settings/config";
 
 const allocationFields = [
-  { key: "essentials", label: "Essentials" },
-  { key: "personal", label: "Personal" },
-  { key: "savings", label: "Savings" },
-  { key: "investment", label: "Investments" },
-  { key: "reserve", label: "Reserve" },
+  "essentials",
+  "personal",
+  "savings",
+  "investment",
+  "reserve",
 ] as const;
 
 export function AllocationDefaultsForm({
   canManage,
+  copy,
   defaults,
 }: {
   canManage: boolean;
+  copy: SettingsPageCopy["allocationForm"];
   defaults: AllocationDefaults;
 }) {
   const [state, action, pending] = useActionState(
@@ -55,7 +58,7 @@ export function AllocationDefaultsForm({
         aria-live="polite"
       >
         <div>
-          <p className="text-xs font-medium">Default allocation total</p>
+          <p className="text-xs font-medium">{copy.total}</p>
           <p className="mt-0.5 font-display text-2xl font-semibold tabular-nums">
             {total.toFixed(2)}%
           </p>
@@ -65,37 +68,37 @@ export function AllocationDefaultsForm({
 
       <fieldset disabled={!canManage || pending} className="grid gap-4 sm:grid-cols-2">
         {allocationFields.map((field) => (
-          <div key={field.key}>
+          <div key={field}>
             <label
-              htmlFor={`default-${field.key}`}
+              htmlFor={`default-${field}`}
               className="mb-2 block text-sm font-medium"
             >
-              {field.label}
+              {copy.fields[field]}
             </label>
             <div className="relative">
               <input
-                id={`default-${field.key}`}
-                name={field.key}
-                value={values[field.key]}
+                id={`default-${field}`}
+                name={field}
+                value={values[field]}
                 onChange={(event) =>
                   setValues((current) => ({
                     ...current,
-                    [field.key]: event.target.value,
+                    [field]: event.target.value,
                   }))
                 }
                 inputMode="decimal"
                 required
                 className="h-12 w-full rounded-xl border bg-background px-3 pe-10 text-sm font-semibold tabular-nums shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:opacity-55"
-                aria-invalid={Boolean(state.fieldErrors?.[field.key])}
-                aria-describedby={`default-${field.key}-error`}
+                aria-invalid={Boolean(state.fieldErrors?.[field])}
+                aria-describedby={`default-${field}-error`}
               />
               <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                 %
               </span>
             </div>
             <FieldError
-              id={`default-${field.key}-error`}
-              errors={state.fieldErrors?.[field.key]}
+              id={`default-${field}-error`}
+              errors={state.fieldErrors?.[field]}
             />
           </div>
         ))}
@@ -112,7 +115,7 @@ export function AllocationDefaultsForm({
           className="mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
         >
           <Save aria-hidden="true" className="size-4" />
-          {pending ? "Saving…" : "Save planning defaults"}
+          {pending ? copy.saving : copy.save}
         </button>
       </div>
     </form>

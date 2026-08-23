@@ -8,8 +8,13 @@ import { logoutAction } from "@/app/actions/auth";
 import { revokeOtherSessionsAction } from "@/app/actions/settings";
 import { FormStatus } from "@/components/finance/form-feedback";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 
-export function SecurityControls() {
+export function SecurityControls({
+  copy,
+}: {
+  copy: SettingsPageCopy["securityControls"];
+}) {
   const [state, action, pending] = useActionState(
     revokeOtherSessionsAction,
     initialFinanceActionState,
@@ -23,18 +28,18 @@ export function SecurityControls() {
       >
         <KeyRound aria-hidden="true" className="size-5 text-primary" />
         <p className="mt-4 text-sm font-semibold group-hover:text-primary">
-          Change password
+          {copy.changePassword}
         </p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Replace your current password and keep this session.
+          {copy.changePasswordDescription}
         </p>
       </Link>
 
       <div className="rounded-2xl border bg-background p-4">
         <MonitorX aria-hidden="true" className="size-5 text-primary" />
-        <p className="mt-4 text-sm font-semibold">Revoke other sessions</p>
+        <p className="mt-4 text-sm font-semibold">{copy.revokeOthers}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Keep this device signed in and remove every other session.
+          {copy.revokeOthersDescription}
         </p>
         <form action={action} className="mt-4">
           <button
@@ -42,7 +47,7 @@ export function SecurityControls() {
             disabled={pending}
             className="min-h-10 cursor-pointer rounded-xl border px-3 text-xs font-semibold transition hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-55"
           >
-            {pending ? "Revoking…" : "Revoke others"}
+            {pending ? copy.revoking : copy.revokeOthers}
           </button>
         </form>
         <div className="mt-2">
@@ -55,9 +60,9 @@ export function SecurityControls() {
           aria-hidden="true"
           className="size-5 text-rose-700 dark:text-rose-300"
         />
-        <p className="mt-4 text-sm font-semibold">Sign out everywhere</p>
+        <p className="mt-4 text-sm font-semibold">{copy.signOutEverywhere}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          End this session and every other session for your account.
+          {copy.signOutEverywhereDescription}
         </p>
         <form action={logoutAction} className="mt-4">
           <input type="hidden" name="scope" value="global" />
@@ -65,7 +70,7 @@ export function SecurityControls() {
             type="submit"
             className="min-h-10 cursor-pointer rounded-xl border border-rose-500/25 px-3 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/[0.07] dark:text-rose-300"
           >
-            Sign out everywhere
+            {copy.signOutEverywhere}
           </button>
         </form>
       </div>

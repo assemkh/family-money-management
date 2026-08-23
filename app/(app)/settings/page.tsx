@@ -201,6 +201,7 @@ export default async function SettingsPage() {
           <div className="mt-6 border-t pt-6">
             <AllocationDefaultsForm
               canManage={data.canManage}
+              copy={copy.allocationForm}
               defaults={data.allocationDefaults}
             />
           </div>
@@ -214,6 +215,7 @@ export default async function SettingsPage() {
           <div className="mt-6 border-t pt-6">
             <FinancialHealthForm
               canManage={data.canManage}
+              copy={copy.healthForm}
               thresholds={data.financialHealth}
             />
           </div>
@@ -228,6 +230,7 @@ export default async function SettingsPage() {
         <div className="mt-6 border-t pt-6">
           <DashboardPreferencesForm
             canManage={data.canManage}
+            copy={copy.dashboardForm}
             preferences={data.dashboardPreferences}
           />
         </div>
@@ -242,6 +245,7 @@ export default async function SettingsPage() {
           {data.exchangeRates.map((exchangeRate) => (
             <ExchangeRateForm
               key={exchangeRate.currency}
+              copy={copy.exchangeRateForm}
               defaultDate={data.defaultDate}
               exchangeRate={exchangeRate}
             />
@@ -299,7 +303,7 @@ export default async function SettingsPage() {
       >
         <SettingsHeading {...copy.sections.security} icon={ShieldCheck} />
         <div className="mt-6 border-t pt-6">
-          <SecurityControls />
+          <SecurityControls copy={copy.securityControls} />
         </div>
       </section>
     </div>

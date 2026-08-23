@@ -33,5 +33,8 @@ describe("localization", () => {
     expect(copy.inventory.configuredCategories(6)).toBe(
       "6 تصنيفاً خاصاً بالعائلة إجمالاً",
     );
+    expect(copy.allocationForm.fields.investment).toBe("الاستثمارات");
+    expect(copy.dashboardForm.widgets.showGoals.label).toBe("أهداف الادخار");
+    expect(copy.securityControls.revokeOthers).toBe("إلغاء الجلسات الأخرى");
   });
 });

@@ -7,12 +7,25 @@ import { saveExchangeRateAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import type { ManualExchangeRate } from "@/lib/finance/data";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
+
+const defaultCopy: SettingsPageCopy["exchangeRateForm"] = {
+  inDzd: "in DZD",
+  currentSince: "Current since",
+  noRate: "No manual rate yet",
+  rate: "Rate",
+  effectiveDate: "Effective date",
+  save: "Save rate",
+  saving: "Saving…",
+};
 
 export function ExchangeRateForm({
   defaultDate,
+  copy = defaultCopy,
   exchangeRate,
 }: {
   defaultDate: string;
+  copy?: SettingsPageCopy["exchangeRateForm"];
   exchangeRate: ManualExchangeRate;
 }) {
   const [state, action, pending] = useActionState(
@@ -25,11 +38,13 @@ export function ExchangeRateForm({
       <input type="hidden" name="currency" value={exchangeRate.currency} />
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold">1 {exchangeRate.currency} in DZD</p>
+          <p className="text-sm font-semibold">
+            1 {exchangeRate.currency} {copy.inDzd}
+          </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {exchangeRate.effectiveDate
-              ? `Current since ${exchangeRate.effectiveDate}`
-              : "No manual rate yet"}
+              ? `${copy.currentSince} ${exchangeRate.effectiveDate}`
+              : copy.noRate}
           </p>
         </div>
         <RefreshCw aria-hidden="true" className="size-4 text-muted-foreground" />
@@ -40,7 +55,7 @@ export function ExchangeRateForm({
             htmlFor={`rate-${exchangeRate.currency}`}
             className="mb-1.5 block text-xs font-medium"
           >
-            Rate
+            {copy.rate}
           </label>
           <input
             id={`rate-${exchangeRate.currency}`}
@@ -65,7 +80,7 @@ export function ExchangeRateForm({
             htmlFor={`rate-date-${exchangeRate.currency}`}
             className="mb-1.5 block text-xs font-medium"
           >
-            Effective date
+            {copy.effectiveDate}
           </label>
           <input
             id={`rate-date-${exchangeRate.currency}`}
@@ -82,7 +97,7 @@ export function ExchangeRateForm({
           disabled={pending}
           className="h-11 cursor-pointer self-end rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
         >
-          {pending ? "Saving…" : "Save rate"}
+          {pending ? copy.saving : copy.save}
         </button>
       </div>
       <div className="mt-3">
