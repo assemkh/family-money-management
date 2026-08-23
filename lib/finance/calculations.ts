@@ -76,3 +76,32 @@ export function calculateMonthlyFlow({
     savingRate: income > 0 ? ((savings + investments) / income) * 100 : 0,
   };
 }
+
+export function calculatePercentageBreakdown<T extends { amount: number }>(rows: T[]) {
+  const total = rows.reduce((sum, row) => sum + Math.max(row.amount, 0), 0);
+
+  return rows
+    .filter((row) => row.amount > 0)
+    .map((row) => ({
+      ...row,
+      percentage: total > 0 ? (row.amount / total) * 100 : 0,
+    }))
+    .sort((left, right) => right.amount - left.amount);
+}
+
+export function calculateAveragePlanVariance(
+  rows: Array<{ actual: number; planned: number | null }>,
+) {
+  const comparable = rows.filter(
+    (row): row is { actual: number; planned: number } =>
+      row.planned !== null && row.planned > 0,
+  );
+  if (comparable.length === 0) return null;
+
+  return (
+    comparable.reduce(
+      (total, row) => total + Math.abs(row.actual - row.planned) / row.planned,
+      0,
+    ) / comparable.length
+  );
+}

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  calculateAveragePlanVariance,
   calculateDzdTotal,
   calculateGain,
   calculateLiabilityRemaining,
   calculateMonthlyFlow,
+  calculatePercentageBreakdown,
   calculatePlannedAmount,
   convertToDzd,
 } from "@/lib/finance/calculations";
@@ -62,5 +64,29 @@ describe("finance calculations", () => {
         investments: 20000,
       }),
     ).toEqual({ remaining: 30000, savingRate: 25 });
+  });
+
+  it("builds chart percentages from raw amounts and removes empty slices", () => {
+    expect(
+      calculatePercentageBreakdown([
+        { key: "personal", amount: 20000 },
+        { key: "empty", amount: 0 },
+        { key: "essentials", amount: 80000 },
+      ]),
+    ).toEqual([
+      { key: "essentials", amount: 80000, percentage: 80 },
+      { key: "personal", amount: 20000, percentage: 20 },
+    ]);
+  });
+
+  it("calculates average absolute plan variance from comparable rows", () => {
+    expect(
+      calculateAveragePlanVariance([
+        { planned: 100, actual: 110 },
+        { planned: 200, actual: 160 },
+        { planned: null, actual: 50 },
+      ]),
+    ).toBeCloseTo(0.15);
+    expect(calculateAveragePlanVariance([{ planned: null, actual: 10 }])).toBeNull();
   });
 });
