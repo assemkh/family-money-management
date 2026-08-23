@@ -5,6 +5,7 @@ import { getAlgiersDateValues } from "@/lib/formatting/date";
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import { defaultLocale, supportedLocales, type Locale } from "@/lib/i18n/config";
 import {
+  type CategoryType,
   parseAllocationDefaults,
   parseFinancialHealthSettings,
   settingKeys,
@@ -60,11 +61,19 @@ export async function getSettingsPageData() {
       .eq("family_id", profile.familyId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
-    supabase.from("expense_categories").select("id, family_id, is_active"),
+    supabase
+      .from("expense_categories")
+      .select("id, name, type, parent_category_id, is_active, sort_order")
+      .eq("family_id", profile.familyId)
+      .order("type")
+      .order("sort_order")
+      .order("name"),
     supabase
       .from("income_sources")
-      .select("id, is_active")
-      .eq("family_id", profile.familyId),
+      .select("id, name, owner_member_id, is_active, sort_order")
+      .eq("family_id", profile.familyId)
+      .order("sort_order")
+      .order("name"),
   ]);
 
   const firstError = [
@@ -121,12 +130,25 @@ export async function getSettingsPageData() {
       rate: latestRates.get(currency)?.rate ?? null,
       effectiveDate: latestRates.get(currency)?.effectiveDate ?? null,
     })),
+    categories: (categoriesResult.data ?? []).map((category) => ({
+      id: category.id,
+      name: category.name,
+      type: category.type as CategoryType,
+      parentCategoryId: category.parent_category_id,
+      active: category.is_active,
+      sortOrder: category.sort_order,
+    })),
+    incomeSources: (sourcesResult.data ?? []).map((source) => ({
+      id: source.id,
+      name: source.name,
+      ownerMemberId: source.owner_member_id,
+      active: source.is_active,
+      sortOrder: source.sort_order,
+    })),
     inventory: {
       activeCategories: (categoriesResult.data ?? []).filter((row) => row.is_active)
         .length,
-      customCategories: (categoriesResult.data ?? []).filter(
-        (row) => row.family_id === profile.familyId,
-      ).length,
+      configuredCategories: (categoriesResult.data ?? []).length,
       activeIncomeSources: (sourcesResult.data ?? []).filter((row) => row.is_active)
         .length,
     },

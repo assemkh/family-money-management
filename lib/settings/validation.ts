@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { categoryTypes } from "@/lib/settings/config";
+
 const percentageInput = z
   .string()
   .trim()
@@ -66,3 +68,46 @@ export const financialHealthSettingsSchema = z
       });
     }
   });
+
+const optionalUuid = z.preprocess(
+  (value) => (value === "" || value === null ? null : value),
+  z.uuid("Choose a valid option.").nullable(),
+);
+
+const managementName = z
+  .string()
+  .trim()
+  .min(1, "Enter a name.")
+  .max(100, "Keep the name under 100 characters.");
+
+const sortOrder = z.coerce
+  .number()
+  .int("Order must be a whole number.")
+  .min(0, "Order cannot be negative.")
+  .max(100000, "Choose a smaller order number.");
+
+export const categorySettingsSchema = z.object({
+  name: managementName,
+  type: z.enum(categoryTypes),
+  parentCategoryId: optionalUuid,
+  sortOrder,
+});
+
+export const categoryUpdateSchema = categorySettingsSchema.extend({
+  id: z.uuid("Choose a valid category."),
+});
+
+export const incomeSourceSettingsSchema = z.object({
+  name: managementName,
+  ownerMemberId: optionalUuid,
+  sortOrder,
+});
+
+export const incomeSourceUpdateSchema = incomeSourceSettingsSchema.extend({
+  id: z.uuid("Choose a valid income source."),
+});
+
+export const managementStatusSchema = z.object({
+  id: z.uuid("Choose a valid item."),
+  active: z.enum(["true", "false"]).transform((value) => value === "true"),
+});

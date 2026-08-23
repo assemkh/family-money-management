@@ -19,8 +19,10 @@ import {
 import { ExchangeRateForm } from "@/components/finance/exchange-rate-form";
 import { HouseholdMemberForm } from "@/components/finance/household-member-form";
 import { AllocationDefaultsForm } from "@/components/settings/allocation-defaults-form";
+import { CategoryManager } from "@/components/settings/category-manager";
 import { FamilySettingsForm } from "@/components/settings/family-settings-form";
 import { FinancialHealthForm } from "@/components/settings/financial-health-form";
+import { IncomeSourceManager } from "@/components/settings/income-source-manager";
 import { formatFullDate } from "@/lib/formatting/date";
 import { getSettingsPageData } from "@/lib/settings/data";
 
@@ -28,6 +30,8 @@ export const metadata: Metadata = { title: "Settings" };
 
 const sectionLinks = [
   { href: "#family", label: "Family", icon: UsersRound },
+  { href: "#categories", label: "Categories", icon: FolderCog },
+  { href: "#sources", label: "Income Sources", icon: BookOpenCheck },
   { href: "#planning", label: "Planning", icon: SlidersHorizontal },
   { href: "#health", label: "Health", icon: CircleGauge },
   { href: "#rates", label: "Rates", icon: BadgeDollarSign },
@@ -116,7 +120,7 @@ export default async function SettingsPage() {
           </p>
           <p className="mt-1 text-sm font-medium">Active categories</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {data.inventory.customCategories} family-created
+            {data.inventory.configuredCategories} family-configured in total
           </p>
         </article>
         <article className="surface-shadow rounded-[1.3rem] border bg-card p-5">
@@ -126,7 +130,7 @@ export default async function SettingsPage() {
           </p>
           <p className="mt-1 text-sm font-medium">Active income sources</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Category and source editors are the next Phase 3B slice.
+            Add, assign, reorder, archive, or restore below.
           </p>
         </article>
         <article className="surface-shadow rounded-[1.3rem] border bg-card p-5">
@@ -153,6 +157,43 @@ export default async function SettingsPage() {
         />
         <div className="mt-6 border-t pt-6">
           <FamilySettingsForm canManage={data.canManage} family={data.family} />
+        </div>
+      </section>
+
+      <section
+        id="categories"
+        className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
+      >
+        <SettingsHeading
+          eyebrow="Daily spending structure"
+          title="Category Management"
+          description="Add and rename family categories, create one-level parent groups, set their order, or archive them without changing history."
+          icon={FolderCog}
+        />
+        <div className="mt-6 border-t pt-6">
+          <CategoryManager canManage={data.canManage} categories={data.categories} />
+        </div>
+      </section>
+
+      <section
+        id="sources"
+        className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
+      >
+        <SettingsHeading
+          eyebrow="Where income begins"
+          title="Income-Source Management"
+          description="Create and assign income sources to a family member, control their display order, and archive unused sources safely."
+          icon={BookOpenCheck}
+        />
+        <div className="mt-6 border-t pt-6">
+          <IncomeSourceManager
+            canManage={data.canManage}
+            members={data.members.map((member) => ({
+              id: member.id,
+              displayName: member.displayName,
+            }))}
+            sources={data.incomeSources}
+          />
         </div>
       </section>
 

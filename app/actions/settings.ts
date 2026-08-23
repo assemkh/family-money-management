@@ -6,8 +6,13 @@ import type { FinanceActionState } from "@/lib/finance/action-state";
 import { settingKeys } from "@/lib/settings/config";
 import {
   allocationDefaultsSchema,
+  categorySettingsSchema,
+  categoryUpdateSchema,
   familySettingsSchema,
   financialHealthSettingsSchema,
+  incomeSourceSettingsSchema,
+  incomeSourceUpdateSchema,
+  managementStatusSchema,
 } from "@/lib/settings/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,6 +63,51 @@ async function saveFamilySetting(
     },
     { onConflict: "family_id,key" },
   );
+}
+
+function configurationError(
+  error: { code?: string; message?: string } | null,
+  fallback: string,
+) {
+  if (error?.code === "23505") return "That name already exists in this family.";
+  return fallback;
+}
+
+async function validateCategoryParent(
+  context: NonNullable<Awaited<ReturnType<typeof readOwnerContext>>>,
+  parentCategoryId: string | null,
+  type: string,
+  categoryId?: string,
+) {
+  if (!parentCategoryId) return null;
+  if (parentCategoryId === categoryId) return "A category cannot be its own parent.";
+
+  const { data, error } = await context.supabase
+    .from("expense_categories")
+    .select("id, type, parent_category_id, is_active")
+    .eq("id", parentCategoryId)
+    .eq("family_id", context.profile.family_id)
+    .maybeSingle();
+  if (error || !data || !data.is_active || data.parent_category_id) {
+    return "Choose an active top-level category as the parent.";
+  }
+  if (data.type !== type)
+    return "A child category must use the same type as its parent.";
+  return null;
+}
+
+async function validateSourceMember(
+  context: NonNullable<Awaited<ReturnType<typeof readOwnerContext>>>,
+  memberId: string | null,
+) {
+  if (!memberId) return true;
+  const { data, error } = await context.supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", memberId)
+    .eq("family_id", context.profile.family_id)
+    .maybeSingle();
+  return !error && Boolean(data);
 }
 
 export async function updateFamilySettingsAction(
@@ -189,4 +239,344 @@ export async function updateFinancialHealthSettingsAction(
   revalidatePath("/settings");
   revalidatePath("/dashboard");
   return { status: "success", message: "Financial-health thresholds saved." };
+}
+
+export async function createExpenseCategoryAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = categorySettingsSchema.safeParse({
+    name: formData.get("name"),
+    type: formData.get("type"),
+    parentCategoryId: formData.get("parentCategoryId"),
+    sortOrder: formData.get("sortOrder"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return { status: "error", message: "Only the family owner can add categories." };
+  }
+  const parentError = await validateCategoryParent(
+    context,
+    result.data.parentCategoryId,
+    result.data.type,
+  );
+  if (parentError) {
+    return {
+      status: "error",
+      message: parentError,
+      fieldErrors: { parentCategoryId: [parentError] },
+    };
+  }
+
+  const { error } = await context.supabase.from("expense_categories").insert({
+    family_id: context.profile.family_id,
+    name: result.data.name,
+    type: result.data.type,
+    parent_category_id: result.data.parentCategoryId,
+    sort_order: result.data.sortOrder,
+  });
+  if (error) {
+    return {
+      status: "error",
+      message: configurationError(error, "The category could not be added."),
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/expenses");
+  revalidatePath("/recurring");
+  return { status: "success", message: "Category added and ready for new entries." };
+}
+
+export async function updateExpenseCategoryAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = categoryUpdateSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    type: formData.get("type"),
+    parentCategoryId: formData.get("parentCategoryId"),
+    sortOrder: formData.get("sortOrder"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return { status: "error", message: "Only the family owner can edit categories." };
+  }
+  const parentError = await validateCategoryParent(
+    context,
+    result.data.parentCategoryId,
+    result.data.type,
+    result.data.id,
+  );
+  if (parentError) {
+    return {
+      status: "error",
+      message: parentError,
+      fieldErrors: { parentCategoryId: [parentError] },
+    };
+  }
+
+  const { data: children, error: childrenError } = await context.supabase
+    .from("expense_categories")
+    .select("type")
+    .eq("family_id", context.profile.family_id)
+    .eq("parent_category_id", result.data.id);
+  if (childrenError) {
+    return {
+      status: "error",
+      message: "Category dependencies could not be checked.",
+    };
+  }
+  if (children?.some((child) => child.type !== result.data.type)) {
+    return {
+      status: "error",
+      message: "Move or update child categories before changing this category type.",
+      fieldErrors: {
+        type: ["This type must continue to match every child category."],
+      },
+    };
+  }
+
+  const { data, error } = await context.supabase
+    .from("expense_categories")
+    .update({
+      name: result.data.name,
+      type: result.data.type,
+      parent_category_id: result.data.parentCategoryId,
+      sort_order: result.data.sortOrder,
+    })
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return {
+      status: "error",
+      message: configurationError(error, "The category could not be updated."),
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/expenses");
+  revalidatePath("/recurring");
+  return { status: "success", message: "Category details saved." };
+}
+
+export async function setExpenseCategoryActiveAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = managementStatusSchema.safeParse({
+    id: formData.get("id"),
+    active: formData.get("active"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return {
+      status: "error",
+      message: "Only the family owner can archive categories.",
+    };
+  }
+
+  if (!result.data.active) {
+    const { count, error: childError } = await context.supabase
+      .from("expense_categories")
+      .select("id", { count: "exact", head: true })
+      .eq("family_id", context.profile.family_id)
+      .eq("parent_category_id", result.data.id)
+      .eq("is_active", true);
+    if (childError) {
+      return {
+        status: "error",
+        message: "Category dependencies could not be checked.",
+      };
+    }
+    if ((count ?? 0) > 0) {
+      return {
+        status: "error",
+        message: "Archive or move the active child categories first.",
+      };
+    }
+  } else {
+    const { data: category } = await context.supabase
+      .from("expense_categories")
+      .select("parent_category_id")
+      .eq("id", result.data.id)
+      .eq("family_id", context.profile.family_id)
+      .maybeSingle();
+    if (category?.parent_category_id) {
+      const { data: parent } = await context.supabase
+        .from("expense_categories")
+        .select("is_active")
+        .eq("id", category.parent_category_id)
+        .eq("family_id", context.profile.family_id)
+        .maybeSingle();
+      if (!parent?.is_active) {
+        return { status: "error", message: "Restore the parent category first." };
+      }
+    }
+  }
+
+  const { data, error } = await context.supabase
+    .from("expense_categories")
+    .update({ is_active: result.data.active })
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return { status: "error", message: "The category status could not be changed." };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/expenses");
+  revalidatePath("/recurring");
+  return {
+    status: "success",
+    message: result.data.active
+      ? "Category restored for new entries."
+      : "Category archived. Historical entries remain unchanged.",
+  };
+}
+
+export async function createIncomeSourceAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = incomeSourceSettingsSchema.safeParse({
+    name: formData.get("name"),
+    ownerMemberId: formData.get("ownerMemberId"),
+    sortOrder: formData.get("sortOrder"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return {
+      status: "error",
+      message: "Only the family owner can add income sources.",
+    };
+  }
+  if (!(await validateSourceMember(context, result.data.ownerMemberId))) {
+    return {
+      status: "error",
+      message: "Choose a member from this family.",
+      fieldErrors: { ownerMemberId: ["Choose a valid family member."] },
+    };
+  }
+
+  const { error } = await context.supabase.from("income_sources").insert({
+    family_id: context.profile.family_id,
+    name: result.data.name,
+    owner_member_id: result.data.ownerMemberId,
+    sort_order: result.data.sortOrder,
+  });
+  if (error) {
+    return {
+      status: "error",
+      message: configurationError(error, "The income source could not be added."),
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/income");
+  return { status: "success", message: "Income source added." };
+}
+
+export async function updateIncomeSourceAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = incomeSourceUpdateSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    ownerMemberId: formData.get("ownerMemberId"),
+    sortOrder: formData.get("sortOrder"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return {
+      status: "error",
+      message: "Only the family owner can edit income sources.",
+    };
+  }
+  if (!(await validateSourceMember(context, result.data.ownerMemberId))) {
+    return {
+      status: "error",
+      message: "Choose a member from this family.",
+      fieldErrors: { ownerMemberId: ["Choose a valid family member."] },
+    };
+  }
+
+  const { data, error } = await context.supabase
+    .from("income_sources")
+    .update({
+      name: result.data.name,
+      owner_member_id: result.data.ownerMemberId,
+      sort_order: result.data.sortOrder,
+    })
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return {
+      status: "error",
+      message: configurationError(error, "The income source could not be updated."),
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/income");
+  return { status: "success", message: "Income source details saved." };
+}
+
+export async function setIncomeSourceActiveAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = managementStatusSchema.safeParse({
+    id: formData.get("id"),
+    active: formData.get("active"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return {
+      status: "error",
+      message: "Only the family owner can archive income sources.",
+    };
+  }
+  const { data, error } = await context.supabase
+    .from("income_sources")
+    .update({ is_active: result.data.active })
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return {
+      status: "error",
+      message: "The income source status could not be changed.",
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/income");
+  return {
+    status: "success",
+    message: result.data.active
+      ? "Income source restored."
+      : "Income source archived. Historical income remains unchanged.",
+  };
 }

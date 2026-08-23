@@ -8,7 +8,12 @@ import {
 } from "@/lib/settings/config";
 import {
   allocationDefaultsSchema,
+  categorySettingsSchema,
+  categoryUpdateSchema,
   financialHealthSettingsSchema,
+  incomeSourceSettingsSchema,
+  incomeSourceUpdateSchema,
+  managementStatusSchema,
 } from "@/lib/settings/validation";
 
 describe("settings configuration", () => {
@@ -85,5 +90,69 @@ describe("settings configuration", () => {
         goalProgressTarget: "75",
       }).success,
     ).toBe(false);
+  });
+
+  it("validates category names, hierarchy identifiers, types, and display order", () => {
+    expect(
+      categorySettingsSchema.safeParse({
+        name: "  School  ",
+        type: "essentials",
+        parentCategoryId: "",
+        sortOrder: "120",
+      }),
+    ).toMatchObject({
+      success: true,
+      data: {
+        name: "School",
+        parentCategoryId: null,
+        sortOrder: 120,
+      },
+    });
+    expect(
+      categorySettingsSchema.safeParse({
+        name: "School",
+        type: "not-a-category",
+        parentCategoryId: "bad-id",
+        sortOrder: "-1",
+      }).success,
+    ).toBe(false);
+    expect(
+      categoryUpdateSchema.safeParse({
+        id: "bad-id",
+        name: "School",
+        type: "essentials",
+        parentCategoryId: "",
+        sortOrder: "1",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates income-source ownership and update identifiers", () => {
+    const memberId = "31000000-0000-4000-8000-000000000001";
+    expect(
+      incomeSourceSettingsSchema.safeParse({
+        name: "Salary",
+        ownerMemberId: memberId,
+        sortOrder: "10",
+      }),
+    ).toMatchObject({
+      success: true,
+      data: { ownerMemberId: memberId, sortOrder: 10 },
+    });
+    expect(
+      incomeSourceUpdateSchema.safeParse({
+        id: "not-a-uuid",
+        name: "Salary",
+        ownerMemberId: "",
+        sortOrder: "10",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("only accepts explicit archive and restore status values", () => {
+    const id = "31000000-0000-4000-8000-000000000001";
+    expect(managementStatusSchema.parse({ id, active: "true" }).active).toBe(true);
+    expect(managementStatusSchema.parse({ id, active: "false" }).active).toBe(false);
+    expect(managementStatusSchema.safeParse({ id, active: "1" }).success).toBe(false);
   });
 });

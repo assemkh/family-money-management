@@ -8,6 +8,40 @@ export const settingKeys = {
   financialHealth: "financial_health.thresholds",
 } as const;
 
+export const categoryTypes = [
+  "essentials",
+  "personal",
+  "savings",
+  "investment",
+  "reserve",
+  "liability",
+  "other",
+] as const;
+
+export type CategoryType = (typeof categoryTypes)[number];
+
+export type ManagedCategory = {
+  id: string;
+  name: string;
+  type: CategoryType;
+  parentCategoryId: string | null;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type ManagedIncomeSource = {
+  id: string;
+  name: string;
+  ownerMemberId: string | null;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type SettingsMemberOption = {
+  id: string;
+  displayName: string;
+};
+
 export type AllocationDefaults = {
   essentials: number;
   personal: number;
