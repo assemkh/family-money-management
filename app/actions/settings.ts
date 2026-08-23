@@ -14,7 +14,10 @@ import {
   incomeSourceSettingsSchema,
   incomeSourceUpdateSchema,
   managementStatusSchema,
+  memberPasswordResetSchema,
+  memberProfileUpdateSchema,
 } from "@/lib/settings/validation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 function invalidFields(error: {
@@ -107,6 +110,7 @@ async function validateSourceMember(
     .select("id")
     .eq("id", memberId)
     .eq("family_id", context.profile.family_id)
+    .eq("is_active", true)
     .maybeSingle();
   return !error && Boolean(data);
 }
@@ -621,4 +625,205 @@ export async function setIncomeSourceActiveAction(
       ? "Income source restored."
       : "Income source archived. Historical income remains unchanged.",
   };
+}
+
+export async function updateMemberProfileAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = memberProfileUpdateSchema.safeParse({
+    id: formData.get("id"),
+    displayName: formData.get("displayName"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return { status: "error", message: "Only the family owner can edit members." };
+  }
+
+  const { data, error } = await context.supabase
+    .from("profiles")
+    .update({ display_name: result.data.displayName })
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    return { status: "error", message: "The member profile could not be updated." };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  return { status: "success", message: "Member display name saved." };
+}
+
+export async function setMemberActiveAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = managementStatusSchema.safeParse({
+    id: formData.get("id"),
+    active: formData.get("active"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return { status: "error", message: "Only the family owner can change access." };
+  }
+
+  const { data: member, error: memberError } = await context.supabase
+    .from("profiles")
+    .select("id, display_name, role, is_active")
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .maybeSingle();
+  if (memberError || !member || member.role === "owner") {
+    return { status: "error", message: "Choose a non-owner family member." };
+  }
+  if (member.is_active === result.data.active) {
+    return {
+      status: "success",
+      message: result.data.active
+        ? "Member access is already active."
+        : "Member access is already paused.",
+    };
+  }
+
+  const admin = createAdminClient();
+
+  if (!result.data.active) {
+    const { data, error } = await context.supabase
+      .from("profiles")
+      .update({ is_active: false })
+      .eq("id", member.id)
+      .eq("family_id", context.profile.family_id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      return { status: "error", message: "Member access could not be paused." };
+    }
+
+    const { error: banError } = await admin.auth.admin.updateUserById(member.id, {
+      ban_duration: "876000h",
+    });
+    if (banError) {
+      await context.supabase
+        .from("profiles")
+        .update({ is_active: true })
+        .eq("id", member.id)
+        .eq("family_id", context.profile.family_id);
+      return {
+        status: "error",
+        message: "Auth access could not be paused, so the member stayed active.",
+      };
+    }
+  } else {
+    const { error: unbanError } = await admin.auth.admin.updateUserById(member.id, {
+      ban_duration: "none",
+    });
+    if (unbanError) {
+      return { status: "error", message: "Member sign-in could not be restored." };
+    }
+
+    const { data, error } = await context.supabase
+      .from("profiles")
+      .update({ is_active: true })
+      .eq("id", member.id)
+      .eq("family_id", context.profile.family_id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      await admin.auth.admin.updateUserById(member.id, {
+        ban_duration: "876000h",
+      });
+      return {
+        status: "error",
+        message: "Database access could not be restored, so sign-in remains paused.",
+      };
+    }
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/income");
+  return {
+    status: "success",
+    message: result.data.active
+      ? `${member.display_name} can sign in again.`
+      : `${member.display_name} is paused and family data access is blocked.`,
+  };
+}
+
+export async function resetMemberPasswordAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = memberPasswordResetSchema.safeParse({
+    id: formData.get("id"),
+    temporaryPassword: formData.get("temporaryPassword"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return { status: "error", message: "Only the family owner can reset passwords." };
+  }
+
+  const { data: member, error: memberError } = await context.supabase
+    .from("profiles")
+    .select("id, role, is_active, must_change_password")
+    .eq("id", result.data.id)
+    .eq("family_id", context.profile.family_id)
+    .maybeSingle();
+  if (memberError || !member || member.role === "owner" || !member.is_active) {
+    return { status: "error", message: "Choose an active non-owner family member." };
+  }
+
+  const admin = createAdminClient();
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({ must_change_password: true })
+    .eq("id", member.id)
+    .eq("family_id", context.profile.family_id);
+  if (profileError) {
+    return { status: "error", message: "The password reset could not be prepared." };
+  }
+
+  const { error: passwordError } = await admin.auth.admin.updateUserById(member.id, {
+    password: result.data.temporaryPassword,
+  });
+  if (passwordError) {
+    await admin
+      .from("profiles")
+      .update({ must_change_password: member.must_change_password })
+      .eq("id", member.id)
+      .eq("family_id", context.profile.family_id);
+    return { status: "error", message: "The temporary password was not accepted." };
+  }
+
+  revalidatePath("/settings");
+  return {
+    status: "success",
+    message: "Temporary password saved. The member must replace it at next sign-in.",
+  };
+}
+
+export async function revokeOtherSessionsAction(
+  _previousState: FinanceActionState,
+  _formData: FormData,
+): Promise<FinanceActionState> {
+  void _previousState;
+  void _formData;
+  const supabase = await createClient();
+  const { data, error: userError } = await supabase.auth.getUser();
+  if (userError || !data.user) {
+    return { status: "error", message: "Your session expired. Sign in again." };
+  }
+
+  const { error } = await supabase.auth.signOut({ scope: "others" });
+  if (error) {
+    return { status: "error", message: "Other sessions could not be revoked." };
+  }
+  return { status: "success", message: "Other signed-in sessions were revoked." };
 }

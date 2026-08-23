@@ -12,9 +12,5 @@ export function getAuthRedirect(
     return "/login";
   }
 
-  if (isAuthenticated && pathname === "/login") {
-    return "/dashboard";
-  }
-
   return null;
 }

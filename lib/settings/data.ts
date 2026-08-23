@@ -47,7 +47,9 @@ export async function getSettingsPageData() {
       .maybeSingle(),
     supabase
       .from("profiles")
-      .select("id, display_name, username, role, last_login_at")
+      .select(
+        "id, display_name, username, role, is_active, must_change_password, last_login_at",
+      )
       .eq("family_id", profile.familyId)
       .order("role")
       .order("display_name"),
@@ -122,6 +124,8 @@ export async function getSettingsPageData() {
       displayName: member.display_name,
       username: member.username,
       role: member.role as "owner" | "member",
+      active: member.is_active,
+      mustChangePassword: member.must_change_password,
       lastLoginAt: member.last_login_at,
     })),
     allocationDefaults: parseAllocationDefaults(

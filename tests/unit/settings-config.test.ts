@@ -17,6 +17,8 @@ import {
   incomeSourceSettingsSchema,
   incomeSourceUpdateSchema,
   managementStatusSchema,
+  memberPasswordResetSchema,
+  memberProfileUpdateSchema,
 } from "@/lib/settings/validation";
 
 describe("settings configuration", () => {
@@ -209,6 +211,28 @@ describe("settings configuration", () => {
         showBreakdowns: true,
         showNetWorth: true,
         showGoals: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates member profile and temporary-password administration", () => {
+    const id = "51000000-0000-4000-8000-000000000002";
+    expect(
+      memberProfileUpdateSchema.parse({ id, displayName: "  Family Member  " }),
+    ).toEqual({ id, displayName: "Family Member" });
+    expect(memberProfileUpdateSchema.safeParse({ id, displayName: "" }).success).toBe(
+      false,
+    );
+    expect(
+      memberPasswordResetSchema.safeParse({
+        id,
+        temporaryPassword: "NewSecure1!",
+      }).success,
+    ).toBe(true);
+    expect(
+      memberPasswordResetSchema.safeParse({
+        id,
+        temporaryPassword: "weak",
       }).success,
     ).toBe(false);
   });

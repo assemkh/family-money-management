@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ArrowRight,
   BadgeDollarSign,
   BookOpenCheck,
   CircleGauge,
@@ -25,6 +23,8 @@ import { DashboardPreferencesForm } from "@/components/settings/dashboard-prefer
 import { FamilySettingsForm } from "@/components/settings/family-settings-form";
 import { FinancialHealthForm } from "@/components/settings/financial-health-form";
 import { IncomeSourceManager } from "@/components/settings/income-source-manager";
+import { MemberManager } from "@/components/settings/member-manager";
+import { SecurityControls } from "@/components/settings/security-controls";
 import { formatFullDate } from "@/lib/formatting/date";
 import { getSettingsPageData } from "@/lib/settings/data";
 
@@ -39,6 +39,7 @@ const sectionLinks = [
   { href: "#dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "#rates", label: "Rates", icon: BadgeDollarSign },
   { href: "#members", label: "Members", icon: UserRoundCog },
+  { href: "#security", label: "Security", icon: ShieldCheck },
 ] as const;
 
 export default async function SettingsPage() {
@@ -192,6 +193,7 @@ export default async function SettingsPage() {
           <IncomeSourceManager
             canManage={data.canManage}
             members={data.members.map((member) => ({
+              active: member.active,
               id: member.id,
               displayName: member.displayName,
             }))}
@@ -288,40 +290,17 @@ export default async function SettingsPage() {
           icon={UserRoundCog}
         />
         <div className="mt-6 grid gap-5 border-t pt-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="space-y-3">
-            {data.members.map((member) => (
-              <article key={member.id} className="rounded-2xl border bg-muted/25 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">
-                      {member.displayName}
-                      {member.id === data.currentUserId ? " · You" : ""}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      @{member.username}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-primary">
-                    {member.role}
-                  </span>
-                </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  {member.lastLoginAt
-                    ? `Last sign-in ${formatFullDate(new Date(member.lastLoginAt))}`
-                    : "No completed sign-in yet"}
-                </p>
-              </article>
-            ))}
-            <Link
-              href="/change-password"
-              className="group flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-2xl border bg-background px-4 text-sm font-semibold transition hover:border-primary/30 hover:text-primary"
-            >
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck aria-hidden="true" className="size-4" /> Change your
-                password
-              </span>
-              <ArrowRight aria-hidden="true" className="size-4 rtl:rotate-180" />
-            </Link>
+          <div>
+            <MemberManager
+              canManage={data.canManage}
+              currentUserId={data.currentUserId}
+              members={data.members.map((member) => ({
+                ...member,
+                lastLoginLabel: member.lastLoginAt
+                  ? `last sign-in ${formatFullDate(new Date(member.lastLoginAt))}`
+                  : "no completed sign-in yet",
+              }))}
+            />
           </div>
           {data.canManage ? (
             <div className="rounded-2xl border bg-muted/20 p-4 sm:p-5">
@@ -344,6 +323,21 @@ export default async function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      <section
+        id="security"
+        className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
+      >
+        <SettingsHeading
+          eyebrow="Personal account protection"
+          title="Security & Sessions"
+          description="Change your password, revoke other devices while keeping this one, or sign out everywhere."
+          icon={ShieldCheck}
+        />
+        <div className="mt-6 border-t pt-6">
+          <SecurityControls />
         </div>
       </section>
     </div>

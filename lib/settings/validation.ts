@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { categoryTypes } from "@/lib/settings/config";
+import { strongPasswordSchema } from "@/lib/auth/validation";
 
 const percentageInput = z
   .string()
@@ -123,4 +124,18 @@ export const incomeSourceUpdateSchema = incomeSourceSettingsSchema.extend({
 export const managementStatusSchema = z.object({
   id: z.uuid("Choose a valid item."),
   active: z.enum(["true", "false"]).transform((value) => value === "true"),
+});
+
+export const memberProfileUpdateSchema = z.object({
+  id: z.uuid("Choose a valid family member."),
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter a display name.")
+    .max(100, "Keep the display name under 100 characters."),
+});
+
+export const memberPasswordResetSchema = z.object({
+  id: z.uuid("Choose a valid family member."),
+  temporaryPassword: strongPasswordSchema,
 });

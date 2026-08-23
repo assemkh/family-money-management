@@ -36,6 +36,7 @@ async function resolveIdentifier(identifier: string) {
     .from("profiles")
     .select("id")
     .eq("username", identifier)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (profileError || !profile) return null;
@@ -88,11 +89,11 @@ export async function loginAction(
     const admin = createAdminClient();
     const { data: profile, error: profileError } = await admin
       .from("profiles")
-      .select("must_change_password")
+      .select("must_change_password, is_active")
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (profileError || !profile) {
+    if (profileError || !profile || !profile.is_active) {
       await supabase.auth.signOut({ scope: "local" });
       return {
         status: "error",

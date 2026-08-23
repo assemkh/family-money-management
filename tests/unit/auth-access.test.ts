@@ -22,8 +22,8 @@ describe("route access", () => {
     expect(getAuthRedirect("/login", false)).toBeNull();
   });
 
-  it("moves an authenticated user away from the login page", () => {
-    expect(getAuthRedirect("/login", true)).toBe("/dashboard");
+  it("lets the login page resolve active versus disabled authenticated users", () => {
+    expect(getAuthRedirect("/login", true)).toBeNull();
   });
 
   it("allows an authenticated dashboard request", () => {

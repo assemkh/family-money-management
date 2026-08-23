@@ -39,6 +39,7 @@ export type ManagedIncomeSource = {
 };
 
 export type SettingsMemberOption = {
+  active: boolean;
   id: string;
   displayName: string;
 };

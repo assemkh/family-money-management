@@ -65,8 +65,9 @@ export function IncomeSourceManager({
             <select id="new-source-member" name="ownerMemberId" className={fieldClass}>
               <option value="">Unassigned</option>
               {members.map((member) => (
-                <option key={member.id} value={member.id}>
+                <option key={member.id} value={member.id} disabled={!member.active}>
                   {member.displayName}
+                  {member.active ? "" : " · paused"}
                 </option>
               ))}
             </select>
@@ -194,8 +195,9 @@ function IncomeSourceRow({
               >
                 <option value="">Unassigned</option>
                 {members.map((member) => (
-                  <option key={member.id} value={member.id}>
+                  <option key={member.id} value={member.id} disabled={!member.active}>
                     {member.displayName}
+                    {member.active ? "" : " · paused"}
                   </option>
                 ))}
               </select>

@@ -308,7 +308,7 @@ export async function getIncomePageData() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, is_active")
         .eq("family_id", profile.familyId)
         .order("display_name"),
       supabase
@@ -343,6 +343,9 @@ export async function getIncomePageData() {
   const memberNames = new Map(
     members.map((member) => [member.id, member.display_name]),
   );
+  const activeMemberIds = new Set(
+    members.filter((member) => member.is_active).map((member) => member.id),
+  );
   const sourceNames = new Map(sources.map((source) => [source.id, source.name]));
 
   const memberTotals = members.map((member) => ({
@@ -363,7 +366,9 @@ export async function getIncomePageData() {
       memberName: source.owner_member_id
         ? (memberNames.get(source.owner_member_id) ?? null)
         : null,
-      available: Boolean(source.owner_member_id),
+      available: Boolean(
+        source.owner_member_id && activeMemberIds.has(source.owner_member_id),
+      ),
     })),
     recent: (recentResult.data ?? []).map((entry): RecentIncome => ({
       id: entry.id,

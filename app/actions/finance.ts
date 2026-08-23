@@ -132,6 +132,21 @@ export async function createIncomeEntryAction(
     };
   }
 
+  const { data: sourceMember, error: sourceMemberError } = await context.supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", source.owner_member_id)
+    .eq("family_id", context.profile.family_id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (sourceMemberError || !sourceMember) {
+    return {
+      status: "error",
+      message: "That income source is assigned to a paused family member.",
+      fieldErrors: { sourceId: ["Restore the assigned member first."] },
+    };
+  }
+
   const { error } = await context.supabase.from("income_entries").insert({
     family_id: context.profile.family_id,
     member_id: source.owner_member_id,
@@ -388,6 +403,7 @@ export async function createHouseholdMemberAction(
   }
 
   revalidatePath("/income");
+  revalidatePath("/settings");
   return {
     status: "success",
     message: `${result.data.displayName} can now sign in by username or email.`,
