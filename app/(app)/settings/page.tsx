@@ -8,6 +8,7 @@ import {
   CircleGauge,
   FolderCog,
   Languages,
+  LayoutDashboard,
   LockKeyhole,
   Settings2,
   ShieldCheck,
@@ -20,6 +21,7 @@ import { ExchangeRateForm } from "@/components/finance/exchange-rate-form";
 import { HouseholdMemberForm } from "@/components/finance/household-member-form";
 import { AllocationDefaultsForm } from "@/components/settings/allocation-defaults-form";
 import { CategoryManager } from "@/components/settings/category-manager";
+import { DashboardPreferencesForm } from "@/components/settings/dashboard-preferences-form";
 import { FamilySettingsForm } from "@/components/settings/family-settings-form";
 import { FinancialHealthForm } from "@/components/settings/financial-health-form";
 import { IncomeSourceManager } from "@/components/settings/income-source-manager";
@@ -34,6 +36,7 @@ const sectionLinks = [
   { href: "#sources", label: "Income Sources", icon: BookOpenCheck },
   { href: "#planning", label: "Planning", icon: SlidersHorizontal },
   { href: "#health", label: "Health", icon: CircleGauge },
+  { href: "#dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "#rates", label: "Rates", icon: BadgeDollarSign },
   { href: "#members", label: "Members", icon: UserRoundCog },
 ] as const;
@@ -234,6 +237,24 @@ export default async function SettingsPage() {
           </div>
         </section>
       </div>
+
+      <section
+        id="dashboard"
+        className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
+      >
+        <SettingsHeading
+          eyebrow="Your daily financial brief"
+          title="Dashboard Preferences"
+          description="Choose the opening month, KPI density, chart range, and which decision areas your family sees."
+          icon={LayoutDashboard}
+        />
+        <div className="mt-6 border-t pt-6">
+          <DashboardPreferencesForm
+            canManage={data.canManage}
+            preferences={data.dashboardPreferences}
+          />
+        </div>
+      </section>
 
       <section
         id="rates"

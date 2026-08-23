@@ -29,12 +29,13 @@ export function DashboardTrendChart({ points }: { points: DashboardTrendPoint[] 
   ] as const;
   const values = points.flatMap((point) => series.map((item) => point[item.key]));
   const maximum = Math.max(...values, 0);
+  const rangeLabel = `${points.length}-month`;
 
   if (maximum === 0) {
     return (
       <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed bg-muted/20 px-5 text-center">
         <div>
-          <p className="font-medium">No six-month activity yet.</p>
+          <p className="font-medium">No {rangeLabel} activity yet.</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Income, expenses, savings, and investments will draw this trend.
           </p>
@@ -75,7 +76,7 @@ export function DashboardTrendChart({ points }: { points: DashboardTrendPoint[] 
           className="h-auto min-h-56 w-full min-w-[36rem]"
           role="img"
           focusable="false"
-          aria-label="Six-month trend for income, spending, savings, and investments"
+          aria-label={`${rangeLabel} trend for income, spending, savings, and investments`}
         >
           {[0, 0.5, 1].map((ratio) => {
             const y = verticalPadding + chartHeight * ratio;

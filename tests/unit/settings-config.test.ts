@@ -2,14 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultAllocationDefaults,
+  defaultDashboardPreferences,
   defaultFinancialHealthSettings,
   parseAllocationDefaults,
+  parseDashboardPreferences,
   parseFinancialHealthSettings,
 } from "@/lib/settings/config";
 import {
   allocationDefaultsSchema,
   categorySettingsSchema,
   categoryUpdateSchema,
+  dashboardPreferencesSchema,
   financialHealthSettingsSchema,
   incomeSourceSettingsSchema,
   incomeSourceUpdateSchema,
@@ -154,5 +157,59 @@ describe("settings configuration", () => {
     expect(managementStatusSchema.parse({ id, active: "true" }).active).toBe(true);
     expect(managementStatusSchema.parse({ id, active: "false" }).active).toBe(false);
     expect(managementStatusSchema.safeParse({ id, active: "1" }).success).toBe(false);
+  });
+
+  it("parses complete dashboard preferences and repairs invalid stored fields", () => {
+    expect(
+      parseDashboardPreferences({
+        kpiMode: "compact",
+        defaultMonth: "previous",
+        trendRange: 12,
+        showHealth: false,
+        showPlan: true,
+        showBreakdowns: false,
+        showNetWorth: true,
+        showGoals: false,
+      }),
+    ).toEqual({
+      kpiMode: "compact",
+      defaultMonth: "previous",
+      trendRange: 12,
+      showHealth: false,
+      showPlan: true,
+      showBreakdowns: false,
+      showNetWorth: true,
+      showGoals: false,
+    });
+    expect(parseDashboardPreferences({ trendRange: 7 })).toEqual(
+      defaultDashboardPreferences,
+    );
+  });
+
+  it("validates dashboard preference form values before saving", () => {
+    expect(
+      dashboardPreferencesSchema.safeParse({
+        kpiMode: "full",
+        defaultMonth: "current",
+        trendRange: "3",
+        showHealth: true,
+        showPlan: true,
+        showBreakdowns: true,
+        showNetWorth: true,
+        showGoals: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      dashboardPreferencesSchema.safeParse({
+        kpiMode: "dense",
+        defaultMonth: "current",
+        trendRange: "18",
+        showHealth: true,
+        showPlan: true,
+        showBreakdowns: true,
+        showNetWorth: true,
+        showGoals: true,
+      }).success,
+    ).toBe(false);
   });
 });

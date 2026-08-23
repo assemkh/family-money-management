@@ -5,6 +5,7 @@ import {
 
 export const settingKeys = {
   allocationDefaults: "allocation.defaults",
+  dashboardPreferences: "dashboard.preferences",
   financialHealth: "financial_health.thresholds",
 } as const;
 
@@ -42,6 +43,17 @@ export type SettingsMemberOption = {
   displayName: string;
 };
 
+export type DashboardPreferences = {
+  kpiMode: "compact" | "full";
+  defaultMonth: "current" | "previous";
+  trendRange: 3 | 6 | 12;
+  showHealth: boolean;
+  showPlan: boolean;
+  showBreakdowns: boolean;
+  showNetWorth: boolean;
+  showGoals: boolean;
+};
+
 export type AllocationDefaults = {
   essentials: number;
   personal: number;
@@ -71,6 +83,17 @@ export const defaultFinancialHealthSettings: FinancialHealthSettings = Object.fr
   positiveInvestmentRate: 10,
   debtWarningRatio: 30,
   goalProgressTarget: 75,
+});
+
+export const defaultDashboardPreferences: DashboardPreferences = Object.freeze({
+  kpiMode: "full",
+  defaultMonth: "current",
+  trendRange: 6,
+  showHealth: true,
+  showPlan: true,
+  showBreakdowns: true,
+  showNetWorth: true,
+  showGoals: true,
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -160,4 +183,43 @@ export function parseFinancialHealthSettings(value: unknown): FinancialHealthSet
   return validPercentages && validVariance && validSavingBands
     ? parsed
     : { ...defaultFinancialHealthSettings };
+}
+
+export function parseDashboardPreferences(value: unknown): DashboardPreferences {
+  if (!isRecord(value)) return { ...defaultDashboardPreferences };
+
+  return {
+    kpiMode:
+      value.kpiMode === "compact" || value.kpiMode === "full"
+        ? value.kpiMode
+        : defaultDashboardPreferences.kpiMode,
+    defaultMonth:
+      value.defaultMonth === "current" || value.defaultMonth === "previous"
+        ? value.defaultMonth
+        : defaultDashboardPreferences.defaultMonth,
+    trendRange:
+      value.trendRange === 3 || value.trendRange === 6 || value.trendRange === 12
+        ? value.trendRange
+        : defaultDashboardPreferences.trendRange,
+    showHealth:
+      typeof value.showHealth === "boolean"
+        ? value.showHealth
+        : defaultDashboardPreferences.showHealth,
+    showPlan:
+      typeof value.showPlan === "boolean"
+        ? value.showPlan
+        : defaultDashboardPreferences.showPlan,
+    showBreakdowns:
+      typeof value.showBreakdowns === "boolean"
+        ? value.showBreakdowns
+        : defaultDashboardPreferences.showBreakdowns,
+    showNetWorth:
+      typeof value.showNetWorth === "boolean"
+        ? value.showNetWorth
+        : defaultDashboardPreferences.showNetWorth,
+    showGoals:
+      typeof value.showGoals === "boolean"
+        ? value.showGoals
+        : defaultDashboardPreferences.showGoals,
+  };
 }

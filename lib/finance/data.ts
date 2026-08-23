@@ -17,6 +17,7 @@ import {
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import {
   parseAllocationDefaults,
+  parseDashboardPreferences,
   parseFinancialHealthSettings,
   settingKeys,
 } from "@/lib/settings/config";
@@ -1069,11 +1070,25 @@ export async function getDashboardPageData(requestedMonth?: string) {
   if (!profile) return null;
 
   const supabase = await createClient();
+  const { data: dashboardSettings, error: dashboardSettingsError } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("family_id", profile.familyId)
+    .eq("key", settingKeys.dashboardPreferences)
+    .maybeSingle();
+  if (dashboardSettingsError) {
+    throw new Error("Dashboard preferences could not be loaded.");
+  }
+  const preferences = parseDashboardPreferences(dashboardSettings?.value);
   const { date, month: currentMonth } = getAlgiersDateValues();
-  const month = validSelectedMonth(requestedMonth, currentMonth);
+  const defaultMonth =
+    preferences.defaultMonth === "previous"
+      ? shiftMonthKey(currentMonth, -1)
+      : currentMonth;
+  const month = validSelectedMonth(requestedMonth, defaultMonth);
   const monthStart = `${month}-01`;
-  const trendMonths = Array.from({ length: 6 }, (_, index) =>
-    shiftMonthKey(month, index - 5),
+  const trendMonths = Array.from({ length: preferences.trendRange }, (_, index) =>
+    shiftMonthKey(month, index - (preferences.trendRange - 1)),
   );
   const trendStart = `${trendMonths[0]}-01`;
   const nextMonthStart = `${shiftMonthKey(month, 1)}-01`;
@@ -1436,6 +1451,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
   ];
 
   return {
+    preferences,
     month,
     currentMonth,
     previousMonth: shiftMonthKey(month, -1),

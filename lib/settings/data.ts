@@ -7,6 +7,7 @@ import { defaultLocale, supportedLocales, type Locale } from "@/lib/i18n/config"
 import {
   type CategoryType,
   parseAllocationDefaults,
+  parseDashboardPreferences,
   parseFinancialHealthSettings,
   settingKeys,
 } from "@/lib/settings/config";
@@ -54,7 +55,11 @@ export async function getSettingsPageData() {
       .from("settings")
       .select("key, value, updated_at")
       .eq("family_id", profile.familyId)
-      .in("key", [settingKeys.allocationDefaults, settingKeys.financialHealth]),
+      .in("key", [
+        settingKeys.allocationDefaults,
+        settingKeys.dashboardPreferences,
+        settingKeys.financialHealth,
+      ]),
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
@@ -121,6 +126,9 @@ export async function getSettingsPageData() {
     })),
     allocationDefaults: parseAllocationDefaults(
       settings.get(settingKeys.allocationDefaults)?.value,
+    ),
+    dashboardPreferences: parseDashboardPreferences(
+      settings.get(settingKeys.dashboardPreferences)?.value,
     ),
     financialHealth: parseFinancialHealthSettings(
       settings.get(settingKeys.financialHealth)?.value,

@@ -69,6 +69,19 @@ export const financialHealthSettingsSchema = z
     }
   });
 
+export const dashboardPreferencesSchema = z.object({
+  kpiMode: z.enum(["compact", "full"]),
+  defaultMonth: z.enum(["current", "previous"]),
+  trendRange: z.coerce
+    .number()
+    .pipe(z.union([z.literal(3), z.literal(6), z.literal(12)])),
+  showHealth: z.boolean(),
+  showPlan: z.boolean(),
+  showBreakdowns: z.boolean(),
+  showNetWorth: z.boolean(),
+  showGoals: z.boolean(),
+});
+
 const optionalUuid = z.preprocess(
   (value) => (value === "" || value === null ? null : value),
   z.uuid("Choose a valid option.").nullable(),

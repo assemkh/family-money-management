@@ -8,6 +8,7 @@ import {
   allocationDefaultsSchema,
   categorySettingsSchema,
   categoryUpdateSchema,
+  dashboardPreferencesSchema,
   familySettingsSchema,
   financialHealthSettingsSchema,
   incomeSourceSettingsSchema,
@@ -53,7 +54,7 @@ async function readOwnerContext() {
 async function saveFamilySetting(
   context: NonNullable<Awaited<ReturnType<typeof readOwnerContext>>>,
   key: string,
-  value: Record<string, number>,
+  value: Record<string, boolean | number | string>,
 ) {
   return context.supabase.from("settings").upsert(
     {
@@ -239,6 +240,47 @@ export async function updateFinancialHealthSettingsAction(
   revalidatePath("/settings");
   revalidatePath("/dashboard");
   return { status: "success", message: "Financial-health thresholds saved." };
+}
+
+export async function updateDashboardPreferencesAction(
+  _previousState: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  const result = dashboardPreferencesSchema.safeParse({
+    kpiMode: formData.get("kpiMode"),
+    defaultMonth: formData.get("defaultMonth"),
+    trendRange: formData.get("trendRange"),
+    showHealth: formData.has("showHealth"),
+    showPlan: formData.has("showPlan"),
+    showBreakdowns: formData.has("showBreakdowns"),
+    showNetWorth: formData.has("showNetWorth"),
+    showGoals: formData.has("showGoals"),
+  });
+  if (!result.success) return invalidFields(result.error);
+
+  const context = await readOwnerContext();
+  if (!context) {
+    return {
+      status: "error",
+      message: "Only the family owner can change dashboard preferences.",
+    };
+  }
+
+  const { error } = await saveFamilySetting(
+    context,
+    settingKeys.dashboardPreferences,
+    result.data,
+  );
+  if (error) {
+    return {
+      status: "error",
+      message: "Dashboard preferences could not be saved.",
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Dashboard preferences saved." };
 }
 
 export async function createExpenseCategoryAction(

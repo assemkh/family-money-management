@@ -42,19 +42,23 @@ function monthLabel(month: string) {
 
 function KpiCard({
   caption,
+  compact,
   icon: Icon,
   label,
   tone,
   value,
 }: {
   caption: string;
+  compact: boolean;
   icon: LucideIcon;
   label: string;
   tone: string;
   value: string;
 }) {
   return (
-    <article className="surface-shadow group rounded-[1.25rem] border bg-card p-4 transition duration-300 hover:-translate-y-0.5 hover:border-primary/25 sm:p-5">
+    <article
+      className={`surface-shadow group rounded-[1.25rem] border bg-card p-4 transition duration-300 hover:-translate-y-0.5 hover:border-primary/25 ${compact ? "sm:p-4" : "sm:p-5"}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <span className={`grid size-9 place-items-center rounded-xl ${tone}`}>
           <Icon aria-hidden="true" className="size-4" />
@@ -63,13 +67,17 @@ function KpiCard({
           DZD
         </span>
       </div>
-      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      <p
+        className={`${compact ? "mt-3" : "mt-5"} text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground`}
+      >
         {label}
       </p>
       <p className="mt-1 font-display text-2xl font-semibold tracking-[-0.035em] tabular-nums">
         {value}
       </p>
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">{caption}</p>
+      {!compact ? (
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{caption}</p>
+      ) : null}
     </article>
   );
 }
@@ -96,6 +104,7 @@ export default async function DashboardPage({
     (total, item) => total + item.amount,
     0,
   );
+  const compactKpis = data.preferences.kpiMode === "compact";
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -223,6 +232,7 @@ export default async function DashboardPage({
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <KpiCard
+            compact={compactKpis}
             label="Income"
             value={formatMoney(data.income, {
               compact: true,
@@ -233,6 +243,7 @@ export default async function DashboardPage({
             tone="bg-sky-500/10 text-sky-700 dark:text-sky-300"
           />
           <KpiCard
+            compact={compactKpis}
             label="Spending"
             value={formatMoney(data.spending, {
               compact: true,
@@ -243,6 +254,7 @@ export default async function DashboardPage({
             tone="bg-rose-500/10 text-rose-700 dark:text-rose-300"
           />
           <KpiCard
+            compact={compactKpis}
             label="Saved"
             value={formatMoney(data.savings, {
               compact: true,
@@ -253,6 +265,7 @@ export default async function DashboardPage({
             tone="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
           />
           <KpiCard
+            compact={compactKpis}
             label="Invested"
             value={formatMoney(data.investments, {
               compact: true,
@@ -263,6 +276,7 @@ export default async function DashboardPage({
             tone="bg-amber-500/10 text-amber-700 dark:text-amber-300"
           />
           <KpiCard
+            compact={compactKpis}
             label="Progress"
             value={formatMoney(combinedProgress, {
               compact: true,
@@ -273,6 +287,7 @@ export default async function DashboardPage({
             tone="bg-violet-500/10 text-violet-700 dark:text-violet-300"
           />
           <KpiCard
+            compact={compactKpis}
             label="Net worth"
             value={
               data.netWorth === null
@@ -322,14 +337,16 @@ export default async function DashboardPage({
       ) : null}
 
       <section className="grid gap-5 xl:grid-cols-12">
-        <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-8">
+        <article
+          className={`rounded-[1.4rem] border bg-card p-5 sm:p-6 ${data.preferences.showHealth ? "xl:col-span-8" : "xl:col-span-12"}`}
+        >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
                 Rhythm
               </p>
               <h2 className="mt-1 font-display text-2xl font-semibold">
-                Six-month money flow
+                {data.preferences.trendRange}-month money flow
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Actual entries valued with current manual exchange rates
@@ -343,203 +360,217 @@ export default async function DashboardPage({
           <DashboardTrendChart points={data.trends} />
         </article>
 
-        <aside className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-            Financial health
-          </p>
-          <h2 className="mt-1 font-display text-2xl font-semibold">Current signals</h2>
-          <div className="mt-6 space-y-3">
-            {data.health.map((indicator) => (
-              <div
-                key={indicator.label}
-                className={`rounded-2xl border p-4 ${healthStyles[indicator.status]}`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-70">
-                    {indicator.label}
-                  </p>
-                  {indicator.status === "positive" ? (
-                    <ShieldCheck aria-hidden="true" className="size-4" />
-                  ) : null}
-                </div>
-                <p className="mt-2 font-display text-xl font-semibold">
-                  {indicator.value}
-                </p>
-                <p className="mt-1 text-xs leading-5 opacity-70">
-                  {indicator.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-5">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-                Intention vs reality
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-semibold">
-                Plan vs actual
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {data.planVersion
-                  ? `Active plan version ${data.planVersion}`
-                  : "No active monthly plan"}
-              </p>
-            </div>
-            <Link
-              href={`/monthly-plan?month=${data.month}`}
-              className="grid size-10 place-items-center rounded-xl border transition hover:border-primary/30 hover:text-primary"
-              aria-label="Open monthly plan"
-            >
-              <ArrowRight aria-hidden="true" className="size-4 rtl:rotate-180" />
-            </Link>
-          </div>
-          <DashboardPlanActual rows={data.planRows} />
-        </article>
-
-        <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-7">
-          <div className="mb-6">
+        {data.preferences.showHealth ? (
+          <aside className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-4">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-              Consumption map
+              Financial health
             </p>
             <h2 className="mt-1 font-display text-2xl font-semibold">
-              Expense breakdown
+              Current signals
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Savings and investments remain excluded from spending
-            </p>
-          </div>
-          <DashboardDonut
-            items={data.expenseBreakdown}
-            total={data.spending}
-            totalLabel="Spent"
-          />
-        </article>
-
-        <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-6">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-                Current position
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-semibold">
-                Asset allocation
-              </h2>
-            </div>
-            <Wallet aria-hidden="true" className="size-5 text-muted-foreground" />
-          </div>
-          <DashboardDonut
-            items={data.assetAllocation}
-            total={assetTotal}
-            totalLabel="Assets"
-          />
-          <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-dashed p-4 text-sm">
-            <span className="text-muted-foreground">Outstanding liabilities</span>
-            <span className="font-semibold tabular-nums">
-              {formatMoney(data.liabilitiesValue, { maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </article>
-
-        <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-                Long view
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-semibold">
-                Net-worth trend
-              </h2>
-            </div>
-            <Link
-              href="/net-worth"
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Manage snapshots
-            </Link>
-          </div>
-          <DashboardNetWorthTrend points={data.trends} />
-        </article>
-      </section>
-
-      <section className="rounded-[1.5rem] border bg-[hsl(39_35%_89%)] p-5 text-[hsl(164_25%_16%)] dark:bg-[hsl(164_18%_16%)] dark:text-foreground sm:p-7">
-        <div className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-55">
-              Shared milestones
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.04em]">
-              Goals turn surplus into direction.
-            </h2>
-            <p className="mt-3 max-w-md text-sm leading-6 opacity-65">
-              Progress is updated only by explicit saving records, never by planned
-              percentages.
-            </p>
-            <Link
-              href="/goals"
-              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[hsl(164_25%_16%)] px-4 text-xs font-semibold text-white dark:bg-primary dark:text-primary-foreground"
-            >
-              Open savings goals{" "}
-              <ArrowRight aria-hidden="true" className="size-3.5 rtl:rotate-180" />
-            </Link>
-          </div>
-          {data.goals.length === 0 ? (
-            <div className="grid min-h-44 place-items-center rounded-2xl border border-current/15 bg-white/20 px-5 text-center dark:bg-white/[0.03]">
-              <div>
-                <Target aria-hidden="true" className="mx-auto size-6 opacity-45" />
-                <p className="mt-3 font-medium">No active goal yet.</p>
-                <p className="mt-1 text-sm opacity-60">
-                  Create one to chart shared progress.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {data.goals.map((goal) => (
-                <article
-                  key={goal.id}
-                  className="rounded-2xl border border-current/10 bg-white/28 p-4 dark:bg-white/[0.035]"
+            <div className="mt-6 space-y-3">
+              {data.health.map((indicator) => (
+                <div
+                  key={indicator.label}
+                  className={`rounded-2xl border p-4 ${healthStyles[indicator.status]}`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{goal.name}</p>
-                      <p className="mt-1 text-xs opacity-60">
-                        {formatMoney(goal.currentAmount, {
-                          currency: goal.currency,
-                          compact: true,
-                        })}{" "}
-                        of{" "}
-                        {formatMoney(goal.targetAmount, {
-                          currency: goal.currency,
-                          compact: true,
-                        })}
-                      </p>
-                    </div>
-                    <span className="font-display text-xl font-semibold tabular-nums">
-                      {Math.round(goal.progressPercent)}%
-                    </span>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-70">
+                      {indicator.label}
+                    </p>
+                    {indicator.status === "positive" ? (
+                      <ShieldCheck aria-hidden="true" className="size-4" />
+                    ) : null}
                   </div>
-                  <div
-                    className="mt-4 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"
-                    role="progressbar"
-                    aria-label={`${goal.name} progress`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(goal.progressPercent)}
-                  >
-                    <div
-                      className="h-full rounded-full bg-[hsl(164_40%_30%)] dark:bg-emerald-400"
-                      style={{ width: `${goal.progressPercent}%` }}
-                    />
-                  </div>
-                </article>
+                  <p className="mt-2 font-display text-xl font-semibold">
+                    {indicator.value}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 opacity-70">
+                    {indicator.description}
+                  </p>
+                </div>
               ))}
             </div>
-          )}
-        </div>
+          </aside>
+        ) : null}
+
+        {data.preferences.showPlan ? (
+          <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-5">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+                  Intention vs reality
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold">
+                  Plan vs actual
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {data.planVersion
+                    ? `Active plan version ${data.planVersion}`
+                    : "No active monthly plan"}
+                </p>
+              </div>
+              <Link
+                href={`/monthly-plan?month=${data.month}`}
+                className="grid size-10 place-items-center rounded-xl border transition hover:border-primary/30 hover:text-primary"
+                aria-label="Open monthly plan"
+              >
+                <ArrowRight aria-hidden="true" className="size-4 rtl:rotate-180" />
+              </Link>
+            </div>
+            <DashboardPlanActual rows={data.planRows} />
+          </article>
+        ) : null}
+
+        {data.preferences.showBreakdowns ? (
+          <>
+            <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-7">
+              <div className="mb-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+                  Consumption map
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold">
+                  Expense breakdown
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Savings and investments remain excluded from spending
+                </p>
+              </div>
+              <DashboardDonut
+                items={data.expenseBreakdown}
+                total={data.spending}
+                totalLabel="Spent"
+              />
+            </article>
+
+            <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+                    Current position
+                  </p>
+                  <h2 className="mt-1 font-display text-2xl font-semibold">
+                    Asset allocation
+                  </h2>
+                </div>
+                <Wallet aria-hidden="true" className="size-5 text-muted-foreground" />
+              </div>
+              <DashboardDonut
+                items={data.assetAllocation}
+                total={assetTotal}
+                totalLabel="Assets"
+              />
+              <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-dashed p-4 text-sm">
+                <span className="text-muted-foreground">Outstanding liabilities</span>
+                <span className="font-semibold tabular-nums">
+                  {formatMoney(data.liabilitiesValue, { maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </article>
+          </>
+        ) : null}
+
+        {data.preferences.showNetWorth ? (
+          <article className="rounded-[1.4rem] border bg-card p-5 sm:p-6 xl:col-span-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+                  Long view
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold">
+                  Net-worth trend
+                </h2>
+              </div>
+              <Link
+                href="/net-worth"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Manage snapshots
+              </Link>
+            </div>
+            <DashboardNetWorthTrend points={data.trends} />
+          </article>
+        ) : null}
       </section>
+
+      {data.preferences.showGoals ? (
+        <section className="rounded-[1.5rem] border bg-[hsl(39_35%_89%)] p-5 text-[hsl(164_25%_16%)] dark:bg-[hsl(164_18%_16%)] dark:text-foreground sm:p-7">
+          <div className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-55">
+                Shared milestones
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.04em]">
+                Goals turn surplus into direction.
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-6 opacity-65">
+                Progress is updated only by explicit saving records, never by planned
+                percentages.
+              </p>
+              <Link
+                href="/goals"
+                className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[hsl(164_25%_16%)] px-4 text-xs font-semibold text-white dark:bg-primary dark:text-primary-foreground"
+              >
+                Open savings goals{" "}
+                <ArrowRight aria-hidden="true" className="size-3.5 rtl:rotate-180" />
+              </Link>
+            </div>
+            {data.goals.length === 0 ? (
+              <div className="grid min-h-44 place-items-center rounded-2xl border border-current/15 bg-white/20 px-5 text-center dark:bg-white/[0.03]">
+                <div>
+                  <Target aria-hidden="true" className="mx-auto size-6 opacity-45" />
+                  <p className="mt-3 font-medium">No active goal yet.</p>
+                  <p className="mt-1 text-sm opacity-60">
+                    Create one to chart shared progress.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {data.goals.map((goal) => (
+                  <article
+                    key={goal.id}
+                    className="rounded-2xl border border-current/10 bg-white/28 p-4 dark:bg-white/[0.035]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{goal.name}</p>
+                        <p className="mt-1 text-xs opacity-60">
+                          {formatMoney(goal.currentAmount, {
+                            currency: goal.currency,
+                            compact: true,
+                          })}{" "}
+                          of{" "}
+                          {formatMoney(goal.targetAmount, {
+                            currency: goal.currency,
+                            compact: true,
+                          })}
+                        </p>
+                      </div>
+                      <span className="font-display text-xl font-semibold tabular-nums">
+                        {Math.round(goal.progressPercent)}%
+                      </span>
+                    </div>
+                    <div
+                      className="mt-4 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"
+                      role="progressbar"
+                      aria-label={`${goal.name} progress`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(goal.progressPercent)}
+                    >
+                      <div
+                        className="h-full rounded-full bg-[hsl(164_40%_30%)] dark:bg-emerald-400"
+                        style={{ width: `${goal.progressPercent}%` }}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
