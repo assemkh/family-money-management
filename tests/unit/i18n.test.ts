@@ -36,5 +36,9 @@ describe("localization", () => {
     expect(copy.allocationForm.fields.investment).toBe("الاستثمارات");
     expect(copy.dashboardForm.widgets.showGoals.label).toBe("أهداف الادخار");
     expect(copy.securityControls.revokeOthers).toBe("إلغاء الجلسات الأخرى");
+    expect(copy.categoryManager.types.essentials).toBe("الأساسيات");
+    expect(copy.incomeSourceManager.unassigned).toBe("غير معيّن");
+    expect(copy.memberAccess.pauseSecurely).toBe("إيقاف آمن");
+    expect(copy.onboarding.steps).toHaveLength(3);
   });
 });

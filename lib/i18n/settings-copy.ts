@@ -108,6 +108,94 @@ export type SettingsPageCopy = {
     signOutEverywhere: string;
     signOutEverywhereDescription: string;
   };
+  categoryManager: {
+    addTitle: string;
+    name: string;
+    type: string;
+    displayOrder: string;
+    parent: string;
+    topLevel: string;
+    under: string;
+    order: string;
+    archived: string;
+    adding: string;
+    add: string;
+    saving: string;
+    saveChanges: string;
+    types: Record<CategoryKind, string>;
+  };
+  incomeSourceManager: {
+    addTitle: string;
+    name: string;
+    member: string;
+    unassigned: string;
+    paused: string;
+    displayOrder: string;
+    order: string;
+    archived: string;
+    adding: string;
+    add: string;
+    saving: string;
+    saveChanges: string;
+  };
+  archiveConfirmation: {
+    restoring: string;
+    restore: string;
+    archive: string;
+    confirm: string;
+    hidePrefix: string;
+    hideSuffix: string;
+    close: string;
+    description: string;
+    keepActive: string;
+    archiving: string;
+    archiveSafely: string;
+  };
+  memberManager: {
+    you: string;
+    passwordChangeDue: string;
+    paused: string;
+    displayName: string;
+    saving: string;
+    saveName: string;
+    protectedOwner: string;
+    protectedOwnerDescription: string;
+    temporaryPassword: string;
+    passwordPlaceholder: string;
+    resetting: string;
+    setTemporaryPassword: string;
+  };
+  memberAccess: {
+    restoring: string;
+    restore: string;
+    pause: string;
+    titlePrefix: string;
+    titleSuffix: string;
+    close: string;
+    description: string;
+    keepActive: string;
+    pausing: string;
+    pauseSecurely: string;
+  };
+  householdMemberForm: {
+    displayName: string;
+    displayNamePlaceholder: string;
+    username: string;
+    usernamePlaceholder: string;
+    email: string;
+    emailPlaceholder: string;
+    temporaryPassword: string;
+    passwordPlaceholder: string;
+    description: string;
+    creating: string;
+    add: string;
+  };
+  onboarding: {
+    label: string;
+    title: string;
+    description: string;
+    steps: readonly [string, string, string];
+  };
 };
 
 type SectionCopy = {
@@ -135,6 +223,15 @@ type HealthField =
 
 type DashboardWidget =
   "showHealth" | "showPlan" | "showBreakdowns" | "showNetWorth" | "showGoals";
+
+type CategoryKind =
+  | "essentials"
+  | "personal"
+  | "savings"
+  | "investment"
+  | "reserve"
+  | "liability"
+  | "other";
 
 const english = {
   hero: {
@@ -353,6 +450,111 @@ const english = {
     signOutEverywhereDescription:
       "End this session and every other session for your account.",
   },
+  categoryManager: {
+    addTitle: "Add category",
+    name: "Name",
+    type: "Type",
+    displayOrder: "Display order",
+    parent: "Parent category",
+    topLevel: "Top level",
+    under: "under",
+    order: "order",
+    archived: "Archived",
+    adding: "Adding…",
+    add: "Add category",
+    saving: "Saving…",
+    saveChanges: "Save changes",
+    types: {
+      essentials: "Essentials",
+      personal: "Personal",
+      savings: "Savings",
+      investment: "Investment",
+      reserve: "Reserve",
+      liability: "Liability",
+      other: "Other",
+    },
+  },
+  incomeSourceManager: {
+    addTitle: "Add income source",
+    name: "Source name",
+    member: "Family member",
+    unassigned: "Unassigned",
+    paused: "paused",
+    displayOrder: "Display order",
+    order: "order",
+    archived: "Archived",
+    adding: "Adding…",
+    add: "Add income source",
+    saving: "Saving…",
+    saveChanges: "Save changes",
+  },
+  archiveConfirmation: {
+    restoring: "Restoring…",
+    restore: "Restore",
+    archive: "Archive",
+    confirm: "Confirm archive",
+    hidePrefix: "Hide",
+    hideSuffix: "from new entries?",
+    close: "Close confirmation",
+    description:
+      "Historical records will remain unchanged. You can restore this item later from Settings.",
+    keepActive: "Keep active",
+    archiving: "Archiving…",
+    archiveSafely: "Archive safely",
+  },
+  memberManager: {
+    you: "You",
+    passwordChangeDue: "Password change due",
+    paused: "Paused",
+    displayName: "Display name",
+    saving: "Saving…",
+    saveName: "Save name",
+    protectedOwner: "Protected owner account",
+    protectedOwnerDescription:
+      "Owner access cannot be paused. Use the personal security controls below to change this account’s password or revoke sessions.",
+    temporaryPassword: "New temporary password",
+    passwordPlaceholder: "10+ chars, upper, lower, number, symbol",
+    resetting: "Resetting…",
+    setTemporaryPassword: "Set temporary password",
+  },
+  memberAccess: {
+    restoring: "Restoring…",
+    restore: "Restore access",
+    pause: "Pause access",
+    titlePrefix: "Pause",
+    titleSuffix: "family access?",
+    close: "Close confirmation",
+    description:
+      "Sign-in will be blocked and Row Level Security will immediately stop this member from reading or changing family data. Financial history remains intact.",
+    keepActive: "Keep active",
+    pausing: "Pausing…",
+    pauseSecurely: "Pause securely",
+  },
+  householdMemberForm: {
+    displayName: "Display name",
+    displayNamePlaceholder: "Family member’s name",
+    username: "Username",
+    usernamePlaceholder: "username",
+    email: "Email",
+    emailPlaceholder: "name@example.com",
+    temporaryPassword: "Temporary password",
+    passwordPlaceholder: "10+ chars, upper, lower, number, symbol",
+    description:
+      "The new member must replace this temporary password at first login. Unassigned family income sources can then be linked to their account.",
+    creating: "Creating secure account…",
+    add: "Add family member",
+  },
+  onboarding: {
+    label: "First setup",
+    title: "A simple order keeps the household model clean.",
+    description:
+      "You can revisit every choice. Start with identity, define the money structure, then invite the second account.",
+    steps: [
+      "Confirm family language, date style, and currency.",
+      "Review categories, income sources, and planning defaults.",
+      "Add your family member, then verify dashboard preferences.",
+    ],
+  },
 } satisfies SettingsPageCopy;
 
 const arabic = {
@@ -568,6 +770,111 @@ const arabic = {
     revoking: "جارٍ الإلغاء…",
     signOutEverywhere: "تسجيل الخروج من كل الأجهزة",
     signOutEverywhereDescription: "أنه هذه الجلسة وكل الجلسات الأخرى المرتبطة بحسابك.",
+  },
+  categoryManager: {
+    addTitle: "إضافة تصنيف",
+    name: "الاسم",
+    type: "النوع",
+    displayOrder: "ترتيب العرض",
+    parent: "التصنيف الرئيسي",
+    topLevel: "مستوى رئيسي",
+    under: "تحت",
+    order: "الترتيب",
+    archived: "مؤرشف",
+    adding: "جارٍ الإضافة…",
+    add: "إضافة التصنيف",
+    saving: "جارٍ الحفظ…",
+    saveChanges: "حفظ التغييرات",
+    types: {
+      essentials: "الأساسيات",
+      personal: "الشخصية",
+      savings: "الادخار",
+      investment: "الاستثمار",
+      reserve: "الاحتياطي",
+      liability: "الالتزامات",
+      other: "أخرى",
+    },
+  },
+  incomeSourceManager: {
+    addTitle: "إضافة مصدر دخل",
+    name: "اسم المصدر",
+    member: "فرد العائلة",
+    unassigned: "غير معيّن",
+    paused: "متوقف",
+    displayOrder: "ترتيب العرض",
+    order: "الترتيب",
+    archived: "مؤرشف",
+    adding: "جارٍ الإضافة…",
+    add: "إضافة مصدر الدخل",
+    saving: "جارٍ الحفظ…",
+    saveChanges: "حفظ التغييرات",
+  },
+  archiveConfirmation: {
+    restoring: "جارٍ الاستعادة…",
+    restore: "استعادة",
+    archive: "أرشفة",
+    confirm: "تأكيد الأرشفة",
+    hidePrefix: "إخفاء",
+    hideSuffix: "من الإدخالات الجديدة؟",
+    close: "إغلاق التأكيد",
+    description:
+      "ستبقى السجلات السابقة من دون تغيير، ويمكنك استعادة هذا العنصر لاحقاً من الإعدادات.",
+    keepActive: "إبقاؤه نشطاً",
+    archiving: "جارٍ الأرشفة…",
+    archiveSafely: "أرشفة آمنة",
+  },
+  memberManager: {
+    you: "أنت",
+    passwordChangeDue: "يلزم تغيير كلمة المرور",
+    paused: "متوقف",
+    displayName: "اسم العرض",
+    saving: "جارٍ الحفظ…",
+    saveName: "حفظ الاسم",
+    protectedOwner: "حساب المالك محمي",
+    protectedOwnerDescription:
+      "لا يمكن إيقاف وصول المالك. استخدم أدوات الأمان الشخصية أدناه لتغيير كلمة مرور هذا الحساب أو إلغاء جلساته.",
+    temporaryPassword: "كلمة مرور مؤقتة جديدة",
+    passwordPlaceholder: "10 رموز فأكثر، كبيرة وصغيرة ورقم ورمز خاص",
+    resetting: "جارٍ التعيين…",
+    setTemporaryPassword: "تعيين كلمة مرور مؤقتة",
+  },
+  memberAccess: {
+    restoring: "جارٍ الاستعادة…",
+    restore: "استعادة الوصول",
+    pause: "إيقاف الوصول",
+    titlePrefix: "إيقاف وصول",
+    titleSuffix: "إلى بيانات العائلة؟",
+    close: "إغلاق التأكيد",
+    description:
+      "سيُمنع تسجيل الدخول، وستوقف سياسات أمان الصفوف هذا العضو فوراً من قراءة بيانات العائلة أو تغييرها. يبقى السجل المالي محفوظاً.",
+    keepActive: "إبقاء الوصول نشطاً",
+    pausing: "جارٍ الإيقاف…",
+    pauseSecurely: "إيقاف آمن",
+  },
+  householdMemberForm: {
+    displayName: "اسم العرض",
+    displayNamePlaceholder: "اسم فرد العائلة",
+    username: "اسم المستخدم",
+    usernamePlaceholder: "اسم المستخدم",
+    email: "البريد الإلكتروني",
+    emailPlaceholder: "name@example.com",
+    temporaryPassword: "كلمة المرور المؤقتة",
+    passwordPlaceholder: "10 رموز فأكثر، كبيرة وصغيرة ورقم ورمز خاص",
+    description:
+      "يجب على العضو الجديد استبدال كلمة المرور المؤقتة عند أول دخول، ثم يمكن ربط مصادر دخل العائلة غير المعيّنة بحسابه.",
+    creating: "جارٍ إنشاء الحساب الآمن…",
+    add: "إضافة فرد من العائلة",
+  },
+  onboarding: {
+    label: "الإعداد الأول",
+    title: "ترتيب بسيط يحافظ على وضوح نموذج العائلة.",
+    description:
+      "يمكنك العودة إلى كل اختيار لاحقاً. ابدأ بهوية العائلة، ثم حدّد هيكلة المال، وبعدها أضف الحساب الثاني.",
+    steps: [
+      "تأكد من لغة العائلة وتنسيق التاريخ والعملة.",
+      "راجع التصنيفات ومصادر الدخل وإعدادات التخطيط.",
+      "أضف فرد العائلة ثم راجع تفضيلات لوحة المتابعة.",
+    ],
   },
 } satisfies SettingsPageCopy;
 

@@ -10,6 +10,7 @@ import {
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { MemberAccessControl } from "@/components/settings/member-access-control";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 
 type ManagedMember = {
   id: string;
@@ -27,11 +28,15 @@ const fieldClass =
 
 export function MemberManager({
   canManage,
+  copy,
   currentUserId,
+  memberAccessCopy,
   members,
 }: {
   canManage: boolean;
+  copy: SettingsPageCopy["memberManager"];
   currentUserId: string;
+  memberAccessCopy: SettingsPageCopy["memberAccess"];
   members: ManagedMember[];
 }) {
   return (
@@ -40,7 +45,9 @@ export function MemberManager({
         <MemberRow
           key={member.id}
           canManage={canManage}
+          copy={copy}
           current={member.id === currentUserId}
+          memberAccessCopy={memberAccessCopy}
           member={member}
         />
       ))}
@@ -50,12 +57,16 @@ export function MemberManager({
 
 function MemberRow({
   canManage,
+  copy,
   current,
   member,
+  memberAccessCopy,
 }: {
   canManage: boolean;
+  copy: SettingsPageCopy["memberManager"];
   current: boolean;
   member: ManagedMember;
+  memberAccessCopy: SettingsPageCopy["memberAccess"];
 }) {
   const [profileState, profileAction, profilePending] = useActionState(
     updateMemberProfileAction,
@@ -78,7 +89,7 @@ function MemberRow({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">
             {member.displayName}
-            {current ? " · You" : ""}
+            {current ? ` · ${copy.you}` : ""}
           </span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
             @{member.username} · {member.roleLabel} · {member.lastLoginLabel}
@@ -86,12 +97,12 @@ function MemberRow({
         </span>
         {member.mustChangePassword ? (
           <span className="hidden rounded-full bg-amber-500/10 px-2 py-1 text-[0.65rem] font-semibold text-amber-800 sm:inline dark:text-amber-300">
-            Password change due
+            {copy.passwordChangeDue}
           </span>
         ) : null}
         {!member.active ? (
           <span className="rounded-full bg-muted px-2 py-1 text-[0.65rem] font-semibold text-muted-foreground">
-            Paused
+            {copy.paused}
           </span>
         ) : null}
         <ChevronDown
@@ -108,7 +119,7 @@ function MemberRow({
               htmlFor={`member-display-name-${member.id}`}
               className="mb-2 block text-xs font-medium"
             >
-              Display name
+              {copy.displayName}
             </label>
             <input
               id={`member-display-name-${member.id}`}
@@ -132,17 +143,16 @@ function MemberRow({
               className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
             >
               <Save aria-hidden="true" className="size-3.5" />
-              {profilePending ? "Saving…" : "Save name"}
+              {profilePending ? copy.saving : copy.saveName}
             </button>
           </div>
         </form>
 
         {member.role === "owner" ? (
           <div className="rounded-2xl border border-dashed bg-muted/20 p-4">
-            <p className="text-xs font-semibold">Protected owner account</p>
+            <p className="text-xs font-semibold">{copy.protectedOwner}</p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Owner access cannot be paused. Use the personal security controls below to
-              change this account’s password or revoke sessions.
+              {copy.protectedOwnerDescription}
             </p>
           </div>
         ) : (
@@ -153,7 +163,7 @@ function MemberRow({
                 htmlFor={`member-password-${member.id}`}
                 className="mb-2 block text-xs font-medium"
               >
-                New temporary password
+                {copy.temporaryPassword}
               </label>
               <input
                 id={`member-password-${member.id}`}
@@ -161,7 +171,7 @@ function MemberRow({
                 type="password"
                 autoComplete="new-password"
                 required
-                placeholder="10+ chars, upper, lower, number, symbol"
+                placeholder={copy.passwordPlaceholder}
                 className={fieldClass}
                 aria-invalid={Boolean(passwordState.fieldErrors?.temporaryPassword)}
                 aria-describedby={`member-password-${member.id}-error`}
@@ -179,7 +189,7 @@ function MemberRow({
                 className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border px-4 text-xs font-semibold transition hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <KeyRound aria-hidden="true" className="size-3.5" />
-                {passwordPending ? "Resetting…" : "Set temporary password"}
+                {passwordPending ? copy.resetting : copy.setTemporaryPassword}
               </button>
             </div>
           </form>
@@ -189,6 +199,7 @@ function MemberRow({
           <div className="flex justify-end border-t pt-4 lg:col-span-2">
             <MemberAccessControl
               active={member.active}
+              copy={memberAccessCopy}
               id={member.id}
               label={member.displayName}
             />

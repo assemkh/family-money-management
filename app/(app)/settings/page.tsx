@@ -7,6 +7,7 @@ import {
   FolderCog,
   Languages,
   LayoutDashboard,
+  ListChecks,
   LockKeyhole,
   Settings2,
   ShieldCheck,
@@ -150,6 +151,37 @@ export default async function SettingsPage() {
         </article>
       </section>
 
+      <aside className="relative overflow-hidden rounded-[1.45rem] border border-primary/15 bg-primary/[0.045] p-5 sm:p-6">
+        <div className="absolute -end-12 -top-16 size-40 rounded-full bg-primary/[0.07] blur-2xl" />
+        <div className="relative grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              <ListChecks aria-hidden="true" className="size-4" />
+              {copy.onboarding.label}
+            </p>
+            <h2 className="mt-2 font-display text-xl font-semibold sm:text-2xl">
+              {copy.onboarding.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {copy.onboarding.description}
+            </p>
+          </div>
+          <ol className="grid gap-2.5 sm:grid-cols-3">
+            {copy.onboarding.steps.map((step, index) => (
+              <li
+                key={step}
+                className="flex gap-3 rounded-2xl border bg-card/75 p-3.5 text-xs leading-5 text-muted-foreground"
+              >
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </aside>
+
       <section
         id="family"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
@@ -170,7 +202,12 @@ export default async function SettingsPage() {
       >
         <SettingsHeading {...copy.sections.categories} icon={FolderCog} />
         <div className="mt-6 border-t pt-6">
-          <CategoryManager canManage={data.canManage} categories={data.categories} />
+          <CategoryManager
+            archiveCopy={copy.archiveConfirmation}
+            canManage={data.canManage}
+            categories={data.categories}
+            copy={copy.categoryManager}
+          />
         </div>
       </section>
 
@@ -181,7 +218,9 @@ export default async function SettingsPage() {
         <SettingsHeading {...copy.sections.sources} icon={BookOpenCheck} />
         <div className="mt-6 border-t pt-6">
           <IncomeSourceManager
+            archiveCopy={copy.archiveConfirmation}
             canManage={data.canManage}
+            copy={copy.incomeSourceManager}
             members={data.members.map((member) => ({
               active: member.active,
               id: member.id,
@@ -262,7 +301,9 @@ export default async function SettingsPage() {
           <div>
             <MemberManager
               canManage={data.canManage}
+              copy={copy.memberManager}
               currentUserId={data.currentUserId}
+              memberAccessCopy={copy.memberAccess}
               members={data.members.map((member) => ({
                 ...member,
                 roleLabel:
@@ -278,7 +319,7 @@ export default async function SettingsPage() {
           {data.canManage ? (
             <div className="rounded-2xl border bg-muted/20 p-4 sm:p-5">
               <p className="mb-5 text-sm font-semibold">{copy.members.addTitle}</p>
-              <HouseholdMemberForm />
+              <HouseholdMemberForm copy={copy.householdMemberForm} />
             </div>
           ) : (
             <div className="grid min-h-48 place-items-center rounded-2xl border border-dashed bg-muted/20 p-6 text-center">

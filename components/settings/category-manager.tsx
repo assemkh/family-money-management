@@ -10,31 +10,26 @@ import {
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { ArchiveConfirmation } from "@/components/settings/archive-confirmation";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 import {
   categoryTypes,
   type CategoryType,
   type ManagedCategory,
 } from "@/lib/settings/config";
 
-const typeLabels: Record<CategoryType, string> = {
-  essentials: "Essentials",
-  personal: "Personal",
-  savings: "Savings",
-  investment: "Investment",
-  reserve: "Reserve",
-  liability: "Liability",
-  other: "Other",
-};
-
 const fieldClass =
   "h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:opacity-55";
 
 export function CategoryManager({
+  archiveCopy,
   canManage,
   categories,
+  copy,
 }: {
+  archiveCopy: SettingsPageCopy["archiveConfirmation"];
   canManage: boolean;
   categories: ManagedCategory[];
+  copy: SettingsPageCopy["categoryManager"];
 }) {
   const [state, action, pending] = useActionState(
     createExpenseCategoryAction,
@@ -51,7 +46,7 @@ export function CategoryManager({
   return (
     <div className="grid gap-5 xl:grid-cols-[0.78fr_1.22fr]">
       <form action={action} className="rounded-2xl border bg-muted/20 p-4 sm:p-5">
-        <p className="text-sm font-semibold">Add category</p>
+        <p className="text-sm font-semibold">{copy.addTitle}</p>
         <fieldset
           disabled={!canManage || pending}
           className="mt-4 grid gap-4 sm:grid-cols-2"
@@ -61,7 +56,7 @@ export function CategoryManager({
               htmlFor="new-category-name"
               className="mb-1.5 block text-xs font-medium"
             >
-              Name
+              {copy.name}
             </label>
             <input
               id="new-category-name"
@@ -79,7 +74,7 @@ export function CategoryManager({
               htmlFor="new-category-type"
               className="mb-1.5 block text-xs font-medium"
             >
-              Type
+              {copy.type}
             </label>
             <select
               id="new-category-type"
@@ -90,7 +85,7 @@ export function CategoryManager({
             >
               {categoryTypes.map((type) => (
                 <option key={type} value={type}>
-                  {typeLabels[type]}
+                  {copy.types[type]}
                 </option>
               ))}
             </select>
@@ -100,7 +95,7 @@ export function CategoryManager({
               htmlFor="new-category-order"
               className="mb-1.5 block text-xs font-medium"
             >
-              Display order
+              {copy.displayOrder}
             </label>
             <input
               id="new-category-order"
@@ -118,14 +113,14 @@ export function CategoryManager({
               htmlFor="new-category-parent"
               className="mb-1.5 block text-xs font-medium"
             >
-              Parent category
+              {copy.parent}
             </label>
             <select
               id="new-category-parent"
               name="parentCategoryId"
               className={fieldClass}
             >
-              <option value="">Top level</option>
+              <option value="">{copy.topLevel}</option>
               {parentOptions.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -146,7 +141,7 @@ export function CategoryManager({
             className="mt-3 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <Plus aria-hidden="true" className="size-4" />
-            {pending ? "Adding…" : "Add category"}
+            {pending ? copy.adding : copy.add}
           </button>
         </div>
       </form>
@@ -158,6 +153,8 @@ export function CategoryManager({
             canManage={canManage}
             category={category}
             categories={categories}
+            archiveCopy={archiveCopy}
+            copy={copy}
           />
         ))}
       </div>
@@ -166,13 +163,17 @@ export function CategoryManager({
 }
 
 function CategoryRow({
+  archiveCopy,
   categories,
   category,
   canManage,
+  copy,
 }: {
+  archiveCopy: SettingsPageCopy["archiveConfirmation"];
   categories: ManagedCategory[];
   category: ManagedCategory;
   canManage: boolean;
+  copy: SettingsPageCopy["categoryManager"];
 }) {
   const [state, action, pending] = useActionState(
     updateExpenseCategoryAction,
@@ -200,14 +201,15 @@ function CategoryRow({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{category.name}</span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {typeLabels[category.type]}
-            {parentName ? ` · under ${parentName}` : " · top level"} · order{" "}
-            {category.sortOrder}
+            {copy.types[category.type]}
+            {parentName
+              ? ` · ${copy.under} ${parentName}`
+              : ` · ${copy.topLevel}`} · {copy.order} {category.sortOrder}
           </span>
         </span>
         {!category.active ? (
           <span className="rounded-full bg-muted px-2 py-1 text-[0.65rem] font-semibold text-muted-foreground">
-            Archived
+            {copy.archived}
           </span>
         ) : null}
         <ChevronDown
@@ -227,7 +229,7 @@ function CategoryRow({
                 htmlFor={`category-name-${category.id}`}
                 className="mb-1.5 block text-xs font-medium"
               >
-                Name
+                {copy.name}
               </label>
               <input
                 id={`category-name-${category.id}`}
@@ -242,7 +244,7 @@ function CategoryRow({
                 htmlFor={`category-type-${category.id}`}
                 className="mb-1.5 block text-xs font-medium"
               >
-                Type
+                {copy.type}
               </label>
               <select
                 id={`category-type-${category.id}`}
@@ -255,7 +257,7 @@ function CategoryRow({
               >
                 {categoryTypes.map((type) => (
                   <option key={type} value={type}>
-                    {typeLabels[type]}
+                    {copy.types[type]}
                   </option>
                 ))}
               </select>
@@ -265,7 +267,7 @@ function CategoryRow({
                 htmlFor={`category-order-${category.id}`}
                 className="mb-1.5 block text-xs font-medium"
               >
-                Display order
+                {copy.displayOrder}
               </label>
               <input
                 id={`category-order-${category.id}`}
@@ -283,7 +285,7 @@ function CategoryRow({
                 htmlFor={`category-parent-${category.id}`}
                 className="mb-1.5 block text-xs font-medium"
               >
-                Parent category
+                {copy.parent}
               </label>
               <select
                 id={`category-parent-${category.id}`}
@@ -291,7 +293,7 @@ function CategoryRow({
                 defaultValue={category.parentCategoryId ?? ""}
                 className={fieldClass}
               >
-                <option value="">Top level</option>
+                <option value="">{copy.topLevel}</option>
                 {parentOptions.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
                     {candidate.name}
@@ -310,7 +312,7 @@ function CategoryRow({
               className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
             >
               <Save aria-hidden="true" className="size-3.5" />
-              {pending ? "Saving…" : "Save changes"}
+              {pending ? copy.saving : copy.saveChanges}
             </button>
           </div>
         </form>
@@ -321,6 +323,7 @@ function CategoryRow({
               id={category.id}
               kind="category"
               label={category.name}
+              copy={archiveCopy}
             />
           </div>
         ) : null}
