@@ -63,16 +63,18 @@ export function DashboardTrendChart({ points }: { points: DashboardTrendPoint[] 
             <span
               className="size-2 rounded-full"
               style={{ backgroundColor: item.color }}
+              aria-hidden="true"
             />
             {item.label}
           </span>
         ))}
       </div>
-      <div className="mt-5 overflow-hidden rounded-2xl bg-muted/25 px-2 py-3">
+      <div className="mt-5 overflow-x-auto rounded-2xl bg-muted/25 px-2 py-3">
         <svg
           viewBox={`0 0 ${width} ${height + 28}`}
-          className="h-auto min-h-56 w-full"
+          className="h-auto min-h-56 w-full min-w-[36rem]"
           role="img"
+          focusable="false"
           aria-label="Six-month trend for income, spending, savings, and investments"
         >
           {[0, 0.5, 1].map((ratio) => {
@@ -182,6 +184,7 @@ export function DashboardNetWorthTrend({ points }: { points: DashboardTrendPoint
         viewBox={`0 0 ${width} ${height}`}
         className="mt-4 h-auto w-full"
         role="img"
+        focusable="false"
         aria-label={`Net worth changed by ${formatMoney(change)} across captured months`}
       >
         <defs>

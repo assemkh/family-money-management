@@ -175,6 +175,8 @@ export default async function DashboardPage({
                 name="month"
                 type="month"
                 defaultValue={data.month}
+                autoComplete="off"
+                required
                 className="h-11 min-w-0 flex-1 rounded-xl border border-white/12 bg-black/10 px-3 text-sm font-semibold text-white [color-scheme:dark]"
               />
               <button

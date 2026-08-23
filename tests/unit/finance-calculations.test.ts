@@ -8,7 +8,10 @@ import {
   calculateMonthlyFlow,
   calculatePercentageBreakdown,
   calculatePlannedAmount,
+  classifyPlanVariance,
+  classifySavingRate,
   convertToDzd,
+  defaultFinancialHealthThresholds,
 } from "@/lib/finance/calculations";
 
 describe("finance calculations", () => {
@@ -88,5 +91,22 @@ describe("finance calculations", () => {
       ]),
     ).toBeCloseTo(0.15);
     expect(calculateAveragePlanVariance([{ planned: null, actual: 10 }])).toBeNull();
+  });
+
+  it("classifies health indicators with centralized, overridable thresholds", () => {
+    expect(classifySavingRate(20)).toBe("positive");
+    expect(classifySavingRate(10)).toBe("neutral");
+    expect(classifySavingRate(9.9)).toBe("warning");
+    expect(classifyPlanVariance(null)).toBe("neutral");
+    expect(classifyPlanVariance(0.1)).toBe("positive");
+    expect(classifyPlanVariance(0.2)).toBe("warning");
+    expect(classifyPlanVariance(0.3)).toBe("negative");
+
+    expect(
+      classifySavingRate(15, {
+        ...defaultFinancialHealthThresholds,
+        positiveSavingRate: 15,
+      }),
+    ).toBe("positive");
   });
 });

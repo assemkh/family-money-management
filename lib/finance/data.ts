@@ -8,8 +8,11 @@ import {
   calculateMonthlyFlow,
   calculatePercentageBreakdown,
   calculatePlannedAmount,
+  classifyPlanVariance,
+  classifySavingRate,
   convertToDzd,
   type ExchangeRateMap,
+  type FinancialHealthStatus,
 } from "@/lib/finance/calculations";
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import { createClient } from "@/lib/supabase/server";
@@ -264,7 +267,7 @@ export type DashboardHealthIndicator = {
   label: string;
   value: string;
   description: string;
-  status: "positive" | "warning" | "negative" | "neutral";
+  status: FinancialHealthStatus;
 };
 
 function addTotals(
@@ -1388,7 +1391,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
       label: "Saving rate",
       value: `${savingRate.toFixed(1)}%`,
       description: "Explicit savings and investment events divided by actual income.",
-      status: savingRate >= 20 ? "positive" : savingRate >= 10 ? "neutral" : "warning",
+      status: classifySavingRate(savingRate),
     },
     {
       label: "Plan alignment",
@@ -1397,14 +1400,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
           ? "No plan"
           : `${(averagePlanVariance * 100).toFixed(0)}% avg. gap`,
       description: "Average absolute variance across planned allocation areas.",
-      status:
-        averagePlanVariance === null
-          ? "neutral"
-          : averagePlanVariance <= 0.1
-            ? "positive"
-            : averagePlanVariance <= 0.25
-              ? "warning"
-              : "negative",
+      status: classifyPlanVariance(averagePlanVariance),
     },
     {
       label: "Net-worth direction",

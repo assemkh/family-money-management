@@ -2,6 +2,42 @@ import type { SupportedCurrency } from "@/lib/finance/validation";
 
 export type ExchangeRateMap = Partial<Record<"EUR" | "USD", number>>;
 
+export type FinancialHealthStatus = "positive" | "warning" | "negative" | "neutral";
+
+export type FinancialHealthThresholds = Readonly<{
+  positiveSavingRate: number;
+  neutralSavingRate: number;
+  positivePlanVariance: number;
+  warningPlanVariance: number;
+}>;
+
+export const defaultFinancialHealthThresholds: FinancialHealthThresholds =
+  Object.freeze({
+    positiveSavingRate: 20,
+    neutralSavingRate: 10,
+    positivePlanVariance: 0.1,
+    warningPlanVariance: 0.25,
+  });
+
+export function classifySavingRate(
+  savingRate: number,
+  thresholds: FinancialHealthThresholds = defaultFinancialHealthThresholds,
+): FinancialHealthStatus {
+  if (savingRate >= thresholds.positiveSavingRate) return "positive";
+  if (savingRate >= thresholds.neutralSavingRate) return "neutral";
+  return "warning";
+}
+
+export function classifyPlanVariance(
+  variance: number | null,
+  thresholds: FinancialHealthThresholds = defaultFinancialHealthThresholds,
+): FinancialHealthStatus {
+  if (variance === null) return "neutral";
+  if (variance <= thresholds.positivePlanVariance) return "positive";
+  if (variance <= thresholds.warningPlanVariance) return "warning";
+  return "negative";
+}
+
 export function convertToDzd(
   amount: number,
   currency: SupportedCurrency,

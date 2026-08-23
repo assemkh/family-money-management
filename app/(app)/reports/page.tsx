@@ -151,7 +151,9 @@ export default async function ReportsPage({
               type="month"
               name="month"
               defaultValue={data.selectedMonth}
-              className="h-12 w-full rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              autoComplete="off"
+              required
+              className="h-12 w-full rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
             />
           </div>
           <div>
@@ -165,7 +167,10 @@ export default async function ReportsPage({
               min="2000"
               max="2100"
               defaultValue={data.selectedYear}
-              className="h-12 w-full rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              autoComplete="off"
+              inputMode="numeric"
+              required
+              className="h-12 w-full rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
             />
           </div>
           <div>
@@ -176,7 +181,7 @@ export default async function ReportsPage({
               id="report-period"
               name="period"
               defaultValue={data.activityFilters.period}
-              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
             >
               <option value="month">Selected month</option>
               <option value="year">Whole year</option>
@@ -190,7 +195,7 @@ export default async function ReportsPage({
               id="report-type"
               name="activityType"
               defaultValue={data.activityFilters.activityType}
-              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
             >
               <option value="all">All records</option>
               <option value="income">Income</option>
@@ -207,7 +212,7 @@ export default async function ReportsPage({
               id="report-member"
               name="memberId"
               defaultValue={data.activityFilters.memberId ?? ""}
-              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-12 w-full cursor-pointer rounded-xl border bg-background px-3 text-sm font-semibold outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
             >
               <option value="">All members</option>
               {data.members.map((member) => (
