@@ -26,25 +26,28 @@ import { IncomeSourceManager } from "@/components/settings/income-source-manager
 import { MemberManager } from "@/components/settings/member-manager";
 import { SecurityControls } from "@/components/settings/security-controls";
 import { formatFullDate } from "@/lib/formatting/date";
+import { getSettingsCopy } from "@/lib/i18n/settings-copy";
 import { getSettingsPageData } from "@/lib/settings/data";
 
 export const metadata: Metadata = { title: "Settings" };
 
 const sectionLinks = [
-  { href: "#family", label: "Family", icon: UsersRound },
-  { href: "#categories", label: "Categories", icon: FolderCog },
-  { href: "#sources", label: "Income Sources", icon: BookOpenCheck },
-  { href: "#planning", label: "Planning", icon: SlidersHorizontal },
-  { href: "#health", label: "Health", icon: CircleGauge },
-  { href: "#dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "#rates", label: "Rates", icon: BadgeDollarSign },
-  { href: "#members", label: "Members", icon: UserRoundCog },
-  { href: "#security", label: "Security", icon: ShieldCheck },
+  { href: "#family", key: "family", icon: UsersRound },
+  { href: "#categories", key: "categories", icon: FolderCog },
+  { href: "#sources", key: "sources", icon: BookOpenCheck },
+  { href: "#planning", key: "planning", icon: SlidersHorizontal },
+  { href: "#health", key: "health", icon: CircleGauge },
+  { href: "#dashboard", key: "dashboard", icon: LayoutDashboard },
+  { href: "#rates", key: "rates", icon: BadgeDollarSign },
+  { href: "#members", key: "members", icon: UserRoundCog },
+  { href: "#security", key: "security", icon: ShieldCheck },
 ] as const;
 
 export default async function SettingsPage() {
   const data = await getSettingsPageData();
   if (!data) redirect("/login");
+  const copy = getSettingsCopy(data.family.locale);
+  const dateLocale = data.family.locale === "ar" ? "ar-DZ" : "en-DZ";
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -57,22 +60,23 @@ export default async function SettingsPage() {
         <div className="relative grid gap-8 xl:grid-cols-[1fr_auto] xl:items-end">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/70">
-              <Settings2 aria-hidden="true" className="size-3.5" /> Phase 3B · Household
-              controls
+              <Settings2 aria-hidden="true" className="size-3.5" /> {copy.hero.badge}
             </div>
             <h1 className="mt-5 max-w-2xl text-balance font-display text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
-              Shape the system around your family.
+              {copy.hero.title}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/68 sm:text-base">
-              One calm control room for planning defaults, financial signals, family
-              access, language, and manual valuations.
+              {copy.hero.description}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:w-[25rem]">
             {[
-              ["Owner", data.canManage ? "Full control" : "View only"],
-              ["Language", data.family.locale === "ar" ? "العربية" : "English"],
-              ["Audit", "Protected"],
+              [
+                copy.hero.owner,
+                data.canManage ? copy.hero.fullControl : copy.hero.viewOnly,
+              ],
+              [copy.hero.language, data.family.locale === "ar" ? "العربية" : "English"],
+              [copy.hero.audit, copy.hero.protected],
             ].map(([label, value]) => (
               <div
                 key={label}
@@ -89,16 +93,16 @@ export default async function SettingsPage() {
       </section>
 
       <nav
-        aria-label="Settings sections"
+        aria-label={copy.navigationLabel}
         className="flex snap-x gap-2 overflow-x-auto rounded-2xl border bg-card p-2"
       >
-        {sectionLinks.map(({ href, icon: Icon, label }) => (
+        {sectionLinks.map(({ href, icon: Icon, key }) => (
           <a
             key={href}
             href={href}
             className="inline-flex min-h-11 shrink-0 snap-start cursor-pointer items-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground transition hover:bg-primary/[0.06] hover:text-primary"
           >
-            <Icon aria-hidden="true" className="size-4" /> {label}
+            <Icon aria-hidden="true" className="size-4" /> {copy.navigation[key]}
           </a>
         ))}
       </nav>
@@ -107,11 +111,8 @@ export default async function SettingsPage() {
         <section className="flex items-start gap-3 rounded-[1.2rem] border border-amber-500/25 bg-amber-500/[0.07] p-4 text-amber-900 dark:text-amber-200">
           <LockKeyhole aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
           <div>
-            <p className="text-sm font-semibold">Owner approval is required</p>
-            <p className="mt-1 text-xs leading-5">
-              You can review family settings, but only the household owner can change
-              configuration or add members.
-            </p>
+            <p className="text-sm font-semibold">{copy.ownerNotice.title}</p>
+            <p className="mt-1 text-xs leading-5">{copy.ownerNotice.description}</p>
           </div>
         </section>
       ) : null}
@@ -122,9 +123,9 @@ export default async function SettingsPage() {
           <p className="mt-5 font-display text-3xl font-semibold tabular-nums">
             {data.inventory.activeCategories}
           </p>
-          <p className="mt-1 text-sm font-medium">Active categories</p>
+          <p className="mt-1 text-sm font-medium">{copy.inventory.activeCategories}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {data.inventory.configuredCategories} family-configured in total
+            {copy.inventory.configuredCategories(data.inventory.configuredCategories)}
           </p>
         </article>
         <article className="surface-shadow rounded-[1.3rem] border bg-card p-5">
@@ -132,9 +133,9 @@ export default async function SettingsPage() {
           <p className="mt-5 font-display text-3xl font-semibold tabular-nums">
             {data.inventory.activeIncomeSources}
           </p>
-          <p className="mt-1 text-sm font-medium">Active income sources</p>
+          <p className="mt-1 text-sm font-medium">{copy.inventory.activeSources}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Add, assign, reorder, archive, or restore below.
+            {copy.inventory.sourceDescription}
           </p>
         </article>
         <article className="surface-shadow rounded-[1.3rem] border bg-card p-5">
@@ -142,9 +143,9 @@ export default async function SettingsPage() {
           <p className="mt-5 font-display text-3xl font-semibold">
             {data.family.locale.toUpperCase()}
           </p>
-          <p className="mt-1 text-sm font-medium">Application locale</p>
+          <p className="mt-1 text-sm font-medium">{copy.inventory.locale}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            RTL-aware shell preferences are stored with the family.
+            {copy.inventory.localeDescription}
           </p>
         </article>
       </section>
@@ -153,14 +154,13 @@ export default async function SettingsPage() {
         id="family"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Household identity"
-          title="Family Preferences"
-          description="The shared name, currency, language, timezone, and date style for this private workspace."
-          icon={UsersRound}
-        />
+        <SettingsHeading {...copy.sections.family} icon={UsersRound} />
         <div className="mt-6 border-t pt-6">
-          <FamilySettingsForm canManage={data.canManage} family={data.family} />
+          <FamilySettingsForm
+            canManage={data.canManage}
+            copy={copy.familyForm}
+            family={data.family}
+          />
         </div>
       </section>
 
@@ -168,12 +168,7 @@ export default async function SettingsPage() {
         id="categories"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Daily spending structure"
-          title="Category Management"
-          description="Add and rename family categories, create one-level parent groups, set their order, or archive them without changing history."
-          icon={FolderCog}
-        />
+        <SettingsHeading {...copy.sections.categories} icon={FolderCog} />
         <div className="mt-6 border-t pt-6">
           <CategoryManager canManage={data.canManage} categories={data.categories} />
         </div>
@@ -183,12 +178,7 @@ export default async function SettingsPage() {
         id="sources"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Where income begins"
-          title="Income-Source Management"
-          description="Create and assign income sources to a family member, control their display order, and archive unused sources safely."
-          icon={BookOpenCheck}
-        />
+        <SettingsHeading {...copy.sections.sources} icon={BookOpenCheck} />
         <div className="mt-6 border-t pt-6">
           <IncomeSourceManager
             canManage={data.canManage}
@@ -207,12 +197,7 @@ export default async function SettingsPage() {
           id="planning"
           className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
         >
-          <SettingsHeading
-            eyebrow="New-month starting point"
-            title="Planning Defaults"
-            description="These values prefill a new month. They never overwrite an active or historical plan."
-            icon={SlidersHorizontal}
-          />
+          <SettingsHeading {...copy.sections.planning} icon={SlidersHorizontal} />
           <div className="mt-6 border-t pt-6">
             <AllocationDefaultsForm
               canManage={data.canManage}
@@ -225,12 +210,7 @@ export default async function SettingsPage() {
           id="health"
           className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
         >
-          <SettingsHeading
-            eyebrow="Meaningful signals"
-            title="Financial Health Thresholds"
-            description="Choose where dashboard signals become healthy, watchful, or urgent."
-            icon={CircleGauge}
-          />
+          <SettingsHeading {...copy.sections.health} icon={CircleGauge} />
           <div className="mt-6 border-t pt-6">
             <FinancialHealthForm
               canManage={data.canManage}
@@ -244,12 +224,7 @@ export default async function SettingsPage() {
         id="dashboard"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Your daily financial brief"
-          title="Dashboard Preferences"
-          description="Choose the opening month, KPI density, chart range, and which decision areas your family sees."
-          icon={LayoutDashboard}
-        />
+        <SettingsHeading {...copy.sections.dashboard} icon={LayoutDashboard} />
         <div className="mt-6 border-t pt-6">
           <DashboardPreferencesForm
             canManage={data.canManage}
@@ -262,12 +237,7 @@ export default async function SettingsPage() {
         id="rates"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Manual valuation only"
-          title="Exchange Rates"
-          description="Update EUR and USD without a market-data provider. Every DZD valuation uses your latest effective rate."
-          icon={BadgeDollarSign}
-        />
+        <SettingsHeading {...copy.sections.rates} icon={BadgeDollarSign} />
         <div className="mt-6 grid gap-4 border-t pt-6 xl:grid-cols-2">
           {data.exchangeRates.map((exchangeRate) => (
             <ExchangeRateForm
@@ -283,12 +253,7 @@ export default async function SettingsPage() {
         id="members"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="People & access"
-          title="Family Members"
-          description="See who can access the shared household and add the second secure account when ready."
-          icon={UserRoundCog}
-        />
+        <SettingsHeading {...copy.sections.members} icon={UserRoundCog} />
         <div className="mt-6 grid gap-5 border-t pt-6 xl:grid-cols-[0.9fr_1.1fr]">
           <div>
             <MemberManager
@@ -296,15 +261,19 @@ export default async function SettingsPage() {
               currentUserId={data.currentUserId}
               members={data.members.map((member) => ({
                 ...member,
+                roleLabel:
+                  member.role === "owner" ? copy.hero.owner : copy.members.memberRole,
                 lastLoginLabel: member.lastLoginAt
-                  ? `last sign-in ${formatFullDate(new Date(member.lastLoginAt))}`
-                  : "no completed sign-in yet",
+                  ? copy.members.lastSignIn(
+                      formatFullDate(new Date(member.lastLoginAt), dateLocale),
+                    )
+                  : copy.members.noSignIn,
               }))}
             />
           </div>
           {data.canManage ? (
             <div className="rounded-2xl border bg-muted/20 p-4 sm:p-5">
-              <p className="mb-5 text-sm font-semibold">Add a secure family member</p>
+              <p className="mb-5 text-sm font-semibold">{copy.members.addTitle}</p>
               <HouseholdMemberForm />
             </div>
           ) : (
@@ -314,11 +283,9 @@ export default async function SettingsPage() {
                   aria-hidden="true"
                   className="mx-auto size-5 text-muted-foreground"
                 />
-                <p className="mt-3 text-sm font-medium">
-                  Member administration is locked.
-                </p>
+                <p className="mt-3 text-sm font-medium">{copy.members.lockedTitle}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Ask the family owner to add or manage household access.
+                  {copy.members.lockedDescription}
                 </p>
               </div>
             </div>
@@ -330,12 +297,7 @@ export default async function SettingsPage() {
         id="security"
         className="scroll-mt-28 rounded-[1.45rem] border bg-card p-5 sm:p-7"
       >
-        <SettingsHeading
-          eyebrow="Personal account protection"
-          title="Security & Sessions"
-          description="Change your password, revoke other devices while keeping this one, or sign out everywhere."
-          icon={ShieldCheck}
-        />
+        <SettingsHeading {...copy.sections.security} icon={ShieldCheck} />
         <div className="mt-6 border-t pt-6">
           <SecurityControls />
         </div>

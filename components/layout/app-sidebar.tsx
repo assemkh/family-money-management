@@ -64,7 +64,7 @@ export function AppSidebar({ messages }: AppSidebarProps) {
   ];
 
   const planningItems: NavigationItem[] = [
-    { href: "/assets", icon: Gem, label: "Assets & gold" },
+    { href: "/assets", icon: Gem, label: messages.navigation.assets },
     { href: "/investments", icon: LineChart, label: messages.navigation.investments },
     { href: "/liabilities", icon: HandCoins, label: messages.navigation.liabilities },
     {

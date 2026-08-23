@@ -14,6 +14,7 @@ export type Messages = {
     expenses: string;
     income: string;
     accounts: string;
+    assets: string;
     goals: string;
     investments: string;
     liabilities: string;
@@ -41,6 +42,11 @@ export type Messages = {
     primaryNavigation: string;
     mobileNavigation: string;
     loading: string;
+    changePassword: string;
+    signOutDevice: string;
+    signOutEverywhere: string;
+    roleOwner: string;
+    roleMember: string;
   };
   dashboard: {
     eyebrow: string;

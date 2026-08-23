@@ -95,7 +95,16 @@
 
 @layer components {
   .font-display {
-    font-family: var(--font-display), Georgia, serif;
+    font-family: var(--font-display), var(--font-arabic), Georgia, serif;
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-arabic), var(--font-body), sans-serif;
+  }
+
+  [dir="rtl"] .font-display {
+    font-family: var(--font-arabic), var(--font-display), serif;
+    letter-spacing: normal;
   }
 
   .surface-shadow {

@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { updateFamilySettingsAction } from "@/app/actions/settings";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
+import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 
 type FamilySettings = {
   name: string;
@@ -20,9 +21,11 @@ const fieldClass =
 
 export function FamilySettingsForm({
   canManage,
+  copy,
   family,
 }: {
   canManage: boolean;
+  copy: SettingsPageCopy["familyForm"];
   family: FamilySettings;
 }) {
   const [state, action, pending] = useActionState(
@@ -35,7 +38,7 @@ export function FamilySettingsForm({
       <fieldset disabled={!canManage || pending} className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="family-name" className="mb-2 block text-sm font-medium">
-            Family name
+            {copy.familyName}
           </label>
           <input
             id="family-name"
@@ -50,18 +53,18 @@ export function FamilySettingsForm({
           <FieldError id="family-name-error" errors={state.fieldErrors?.name} />
         </div>
         <div>
-          <p className="mb-2 text-sm font-medium">Base currency</p>
+          <p className="mb-2 text-sm font-medium">{copy.baseCurrency}</p>
           <input type="hidden" name="baseCurrency" value="DZD" />
           <div className="flex min-h-12 items-center rounded-xl border bg-muted/35 px-3 text-sm">
             <span className="font-semibold">{family.baseCurrency}</span>
             <span className="ms-2 text-xs text-muted-foreground">
-              · Fixed for DZD valuations
+              · {copy.fixedCurrency}
             </span>
           </div>
         </div>
         <div>
           <label htmlFor="family-language" className="mb-2 block text-sm font-medium">
-            Interface language
+            {copy.interfaceLanguage}
           </label>
           <select
             id="family-language"
@@ -74,7 +77,7 @@ export function FamilySettingsForm({
           </select>
         </div>
         <div>
-          <p className="mb-2 text-sm font-medium">Timezone</p>
+          <p className="mb-2 text-sm font-medium">{copy.timezone}</p>
           <input type="hidden" name="timezone" value="Africa/Algiers" />
           <div className="flex min-h-12 items-center rounded-xl border bg-muted/35 px-3 text-sm font-semibold">
             {family.timezone}
@@ -85,7 +88,7 @@ export function FamilySettingsForm({
             htmlFor="family-date-format"
             className="mb-2 block text-sm font-medium"
           >
-            Date format
+            {copy.dateFormat}
           </label>
           <select
             id="family-date-format"
@@ -107,7 +110,7 @@ export function FamilySettingsForm({
           className="mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
         >
           <Save aria-hidden="true" className="size-4" />
-          {pending ? "Saving…" : "Save family preferences"}
+          {pending ? copy.saving : copy.save}
         </button>
       </div>
     </form>

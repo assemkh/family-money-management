@@ -16,6 +16,7 @@ type ManagedMember = {
   displayName: string;
   username: string;
   role: "owner" | "member";
+  roleLabel: string;
   active: boolean;
   mustChangePassword: boolean;
   lastLoginLabel: string;
@@ -80,7 +81,7 @@ function MemberRow({
             {current ? " · You" : ""}
           </span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            @{member.username} · {member.role} · {member.lastLoginLabel}
+            @{member.username} · {member.roleLabel} · {member.lastLoginLabel}
           </span>
         </span>
         {member.mustChangePassword ? (

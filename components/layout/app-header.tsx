@@ -68,7 +68,10 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
               <div className="rounded-xl bg-muted/65 px-3 py-2.5">
                 <p className="truncate text-sm font-semibold">{profile.displayName}</p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  @{profile.username} · {profile.role}
+                  @{profile.username} ·{" "}
+                  {profile.role === "owner"
+                    ? messages.shell.roleOwner
+                    : messages.shell.roleMember}
                 </p>
               </div>
               <Link
@@ -83,7 +86,7 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
               >
                 <ShieldCheck aria-hidden="true" className="size-4" />
-                Change password
+                {messages.shell.changePassword}
               </Link>
               <form action={logoutAction}>
                 <input type="hidden" name="scope" value="local" />
@@ -92,7 +95,7 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
                 >
                   <LogOut aria-hidden="true" className="size-4" />
-                  Sign out this device
+                  {messages.shell.signOutDevice}
                 </button>
               </form>
               <form action={logoutAction}>
@@ -102,7 +105,7 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
                 >
                   <LogOut aria-hidden="true" className="size-4" />
-                  Sign out everywhere
+                  {messages.shell.signOutEverywhere}
                 </button>
               </form>
             </div>
