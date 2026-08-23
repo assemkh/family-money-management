@@ -1,19 +1,22 @@
 import Link from "next/link";
-import { ChevronDown, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Settings2, ShieldCheck, UserRound } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import type { CurrentProfile } from "@/lib/auth/profile";
 import { formatFullDate, formatMonth } from "@/lib/formatting/date";
+import type { Locale } from "@/lib/i18n/config";
 import type { Messages } from "@/lib/i18n/types";
 
 type AppHeaderProps = {
   messages: Messages;
   profile: CurrentProfile;
+  locale: Locale;
 };
 
-export function AppHeader({ messages, profile }: AppHeaderProps) {
+export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
   const now = new Date();
+  const dateLocale = locale === "ar" ? "ar-DZ" : "en-DZ";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl">
@@ -24,10 +27,10 @@ export function AppHeader({ messages, profile }: AppHeaderProps) {
           </p>
           <div className="mt-1 flex items-center gap-2">
             <h2 className="truncate font-display text-xl font-semibold tracking-[-0.025em] sm:text-2xl">
-              {formatMonth(now)}
+              {formatMonth(now, dateLocale)}
             </h2>
             <span className="hidden text-xs text-muted-foreground md:inline">
-              · {formatFullDate(now)}
+              · {formatFullDate(now, dateLocale)}
             </span>
           </div>
         </div>
@@ -69,8 +72,15 @@ export function AppHeader({ messages, profile }: AppHeaderProps) {
                 </p>
               </div>
               <Link
-                href="/change-password"
+                href="/settings"
                 className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+              >
+                <Settings2 aria-hidden="true" className="size-4" />
+                {messages.navigation.settings}
+              </Link>
+              <Link
+                href="/change-password"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
               >
                 <ShieldCheck aria-hidden="true" className="size-4" />
                 Change password

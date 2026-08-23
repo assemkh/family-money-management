@@ -15,6 +15,11 @@ import {
   type FinancialHealthStatus,
 } from "@/lib/finance/calculations";
 import type { SupportedCurrency } from "@/lib/finance/validation";
+import {
+  parseAllocationDefaults,
+  parseFinancialHealthSettings,
+  settingKeys,
+} from "@/lib/settings/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type MoneyTotal = {
@@ -818,31 +823,38 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
   const { date, month: currentMonth } = getAlgiersDateValues();
   const selectedMonth = validSelectedMonth(requestedMonth, currentMonth);
 
-  const [plansResult, membersResult, incomeResult, ratesResult] = await Promise.all([
-    supabase
-      .from("monthly_plans")
-      .select("id, month_key, status, current_version_id")
-      .eq("family_id", profile.familyId)
-      .order("month_key", { ascending: false })
-      .limit(36),
-    supabase
-      .from("profiles")
-      .select("id, display_name")
-      .eq("family_id", profile.familyId),
-    supabase
-      .from("income_entries")
-      .select("amount, currency")
-      .eq("family_id", profile.familyId)
-      .eq("income_month", `${selectedMonth}-01`),
-    supabase
-      .from("exchange_rates")
-      .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
-      .lte("effective_date", date)
-      .order("effective_date", { ascending: false }),
-  ]);
+  const [plansResult, membersResult, incomeResult, ratesResult, defaultsResult] =
+    await Promise.all([
+      supabase
+        .from("monthly_plans")
+        .select("id, month_key, status, current_version_id")
+        .eq("family_id", profile.familyId)
+        .order("month_key", { ascending: false })
+        .limit(36),
+      supabase
+        .from("profiles")
+        .select("id, display_name")
+        .eq("family_id", profile.familyId),
+      supabase
+        .from("income_entries")
+        .select("amount, currency")
+        .eq("family_id", profile.familyId)
+        .eq("income_month", `${selectedMonth}-01`),
+      supabase
+        .from("exchange_rates")
+        .select("currency, rate_to_base, effective_date")
+        .eq("family_id", profile.familyId)
+        .lte("effective_date", date)
+        .order("effective_date", { ascending: false }),
+      supabase
+        .from("settings")
+        .select("value")
+        .eq("family_id", profile.familyId)
+        .eq("key", settingKeys.allocationDefaults)
+        .maybeSingle(),
+    ]);
   ensureNoQueryErrors(
-    [plansResult, membersResult, incomeResult, ratesResult],
+    [plansResult, membersResult, incomeResult, ratesResult, defaultsResult],
     "Monthly plans could not be loaded.",
   );
 
@@ -942,13 +954,7 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
     incomeTotals: addTotals(incomeResult.data ?? []),
     missingRateCurrencies: incomeValuation.missingCurrencies,
     plannedAmounts,
-    defaultAllocation: {
-      essentials: 50,
-      personal: 10,
-      savings: 20,
-      investment: 15,
-      reserve: 5,
-    } satisfies MonthlyPlanAllocation,
+    defaultAllocation: parseAllocationDefaults(defaultsResult.data?.value),
   };
 }
 
@@ -1084,6 +1090,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
     investmentsResult,
     liabilitiesResult,
     snapshotsResult,
+    healthSettingsResult,
   ] = await Promise.all([
     supabase
       .from("income_entries")
@@ -1156,6 +1163,12 @@ export async function getDashboardPageData(requestedMonth?: string) {
       .eq("family_id", profile.familyId)
       .order("snapshot_month", { ascending: false })
       .limit(12),
+    supabase
+      .from("settings")
+      .select("value")
+      .eq("family_id", profile.familyId)
+      .eq("key", settingKeys.financialHealth)
+      .maybeSingle(),
   ]);
   ensureNoQueryErrors(
     [
@@ -1171,6 +1184,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
       investmentsResult,
       liabilitiesResult,
       snapshotsResult,
+      healthSettingsResult,
     ],
     "Dashboard totals could not be loaded.",
   );
@@ -1377,6 +1391,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
     historicalSnapshots.length >= 2
       ? historicalSnapshots[0] - historicalSnapshots[1]
       : null;
+  const healthSettings = parseFinancialHealthSettings(healthSettingsResult.data?.value);
   const health: DashboardHealthIndicator[] = [
     {
       label: "Cash flow",
@@ -1391,7 +1406,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
       label: "Saving rate",
       value: `${savingRate.toFixed(1)}%`,
       description: "Explicit savings and investment events divided by actual income.",
-      status: classifySavingRate(savingRate),
+      status: classifySavingRate(savingRate, healthSettings),
     },
     {
       label: "Plan alignment",
@@ -1400,7 +1415,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
           ? "No plan"
           : `${(averagePlanVariance * 100).toFixed(0)}% avg. gap`,
       description: "Average absolute variance across planned allocation areas.",
-      status: classifyPlanVariance(averagePlanVariance),
+      status: classifyPlanVariance(averagePlanVariance, healthSettings),
     },
     {
       label: "Net-worth direction",
