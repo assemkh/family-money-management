@@ -98,6 +98,26 @@ npm run check
 
 GitHub Actions runs the same suite for pull requests and pushes to `main`.
 
+### Browser and performance baseline
+
+Phase 1A adds disposable owner/member browser fixtures, English/Arabic responsive
+screenshots, axe checks, mobile/desktop lab timings, route bundle inventory, and
+privacy-safe Supabase request traces. Start the local Supabase stack once, install
+Chromium once, and then run the complete baseline:
+
+```bash
+npm run supabase:start
+npm run playwright:install
+npm run test:phase-1a
+```
+
+The command builds against the local Supabase project, generates synthetic
+households with random passwords, runs the suite, records ignored artifacts under
+`.artifacts/`, and deletes the fixtures. It never uses the household credentials
+from `.env.local`. See [the performance baseline](docs/performance-baseline.md) for
+the current measurements, known regression allowances, security model, and
+handoff instructions.
+
 ## Project structure
 
 ```text
@@ -106,6 +126,7 @@ components/          UI, brand, authentication, and shell components
 lib/                 Auth, environment, errors, formatting, i18n, validation
 supabase/            Supabase CLI configuration and future migrations
 tests/unit/          Fast utility and contract tests
+tests/e2e/           Browser, accessibility, responsive, and lab measurements
 docs/                Product plan and architecture notes
 ```
 

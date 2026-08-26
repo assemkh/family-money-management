@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import { getPublicEnvironment } from "@/lib/env/public";
 import { sessionCookieOptions } from "@/lib/auth/cookies";
+import { getSupabaseFetch } from "@/lib/observability/supabase-fetch";
 
 type ServerClientOptions = {
   rememberSession?: boolean;
@@ -16,6 +17,7 @@ export async function createClient(options: ServerClientOptions = {}) {
     environment.NEXT_PUBLIC_SUPABASE_URL,
     environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      global: { fetch: getSupabaseFetch() },
       cookies: {
         getAll() {
           return cookieStore.getAll();

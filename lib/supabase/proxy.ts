@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAuthRedirect } from "@/lib/auth/access";
 import { rememberSessionCookie, sessionCookieOptions } from "@/lib/auth/cookies";
 import { getPublicEnvironment, hasSupabaseEnvironment } from "@/lib/env/public";
+import { getSupabaseFetch } from "@/lib/observability/supabase-fetch";
 
 function redirectWithSession(
   request: NextRequest,
@@ -46,6 +47,7 @@ export async function updateSession(request: NextRequest) {
     environment.NEXT_PUBLIC_SUPABASE_URL,
     environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      global: { fetch: getSupabaseFetch() },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(cookiesToSet, headers) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, Newsreader, Noto_Sans_Arabic } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 
+import { WebVitalsReporter } from "@/components/observability/web-vitals-reporter";
 import { defaultLocale, getDirection, getMessages } from "@/lib/i18n/config";
 
 import "./globals.css";
@@ -66,6 +67,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <WebVitalsReporter />
         </ThemeProvider>
       </body>
     </html>

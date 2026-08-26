@@ -15,6 +15,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:public": "playwright test --project=public-chromium",
+    "test:phase-1a": "node scripts/run-phase-1a.mjs",
+    "playwright:install": "playwright install chromium",
+    "analyze:assets": "node scripts/report-build-assets.mjs",
+    "analyze:bundle": "next experimental-analyze --output && npm run analyze:assets",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
@@ -40,6 +46,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19.2.5",

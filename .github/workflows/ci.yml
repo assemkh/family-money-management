@@ -34,3 +34,37 @@ jobs:
 
       - name: Run quality checks
         run: npm run check
+
+  browser-baseline:
+    name: Browser, responsive, and accessibility baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # CI runs the public surface without secrets. Authenticated projects use
+      # disposable local fixtures in development or explicitly configured CI secrets.
+      - name: Run public browser baseline
+        run: npm run build && npm run test:e2e:public
+
+      - name: Upload browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-diagnostics
+          path: .artifacts/playwright
+          retention-days: 7
