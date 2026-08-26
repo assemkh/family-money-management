@@ -149,7 +149,8 @@ export function InvestmentEventForm({
 
       <p className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3.5 py-3 text-xs leading-5 text-amber-900 dark:text-amber-200">
         This is the source record for actual monthly investment. It increases invested
-        cost and current position value together.
+        cost and current position value together, but does not debit an account balance
+        automatically.
       </p>
       <FormStatus state={state} />
       <button

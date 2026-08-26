@@ -45,7 +45,7 @@ export default async function AccountsPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
               <WalletCards aria-hidden="true" className="size-3.5" />
-              Phase 2A · Liquid money
+              Liquid money
             </div>
             <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
               Know where the money is.
@@ -103,7 +103,7 @@ export default async function AccountsPage() {
           <div className="rounded-[1.4rem] border border-dashed bg-card p-10 text-center">
             <p className="font-medium">No active accounts yet.</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Account creation will be available in household settings.
+              No liquid account balances will be included until an account is active.
             </p>
           </div>
         ) : (

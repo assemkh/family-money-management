@@ -23,7 +23,7 @@ export async function PortfolioPage({ kind }: { kind: "assets" | "investments" }
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
             <Icon className="size-3.5" aria-hidden="true" />
-            Phase 2A · {kind}
+            Family {kind}
           </div>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
             {isAssets
@@ -32,7 +32,7 @@ export async function PortfolioPage({ kind }: { kind: "assets" | "investments" }
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
             Purchase and current values stay together so gains and losses remain
-            transparent.
+            transparent. Valuation records do not move liquid account balances.
           </p>
         </div>
       </section>

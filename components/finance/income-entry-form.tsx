@@ -133,6 +133,11 @@ export function IncomeEntryForm({
         />
       </div>
 
+      <p className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3.5 py-3 text-xs leading-5 text-muted-foreground">
+        Income updates monthly cash-flow reporting. It does not credit an account
+        balance automatically; update the receiving account separately when needed.
+      </p>
+
       {availableSources.length === 0 ? (
         <p className="rounded-xl border border-amber-500/20 bg-amber-500/[0.07] px-3.5 py-3 text-sm text-amber-800 dark:text-amber-300">
           An owner needs to assign an income source to a family member before income can

@@ -18,14 +18,15 @@ export default async function RecurringPage() {
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
             <Repeat2 className="size-3.5" aria-hidden="true" />
-            Phase 2A · Recurring
+            Recurring money
           </div>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
             Keep predictable money visible.
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
             Track the next due date for income, bills, savings, investments, and debt
-            payments.
+            payments. Recurring items are reminders and never post transactions
+            automatically.
           </p>
         </div>
       </section>

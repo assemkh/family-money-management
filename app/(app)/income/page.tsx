@@ -26,7 +26,7 @@ export default async function IncomePage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
               <ArrowDownToLine aria-hidden="true" className="size-3.5" />
-              Phase 2A · Money in
+              Family money in
             </div>
             <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
               Record family income.

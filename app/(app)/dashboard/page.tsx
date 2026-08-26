@@ -121,7 +121,7 @@ export default async function DashboardPage({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white/70">
               <Sparkles aria-hidden="true" className="size-3.5 text-amber-200" />
-              Phase 3A · Family financial brief
+              Household financial brief
             </div>
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-white/48">
               Money left after every recorded commitment

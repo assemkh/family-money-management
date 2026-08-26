@@ -147,6 +147,10 @@ export function LiabilityEntryForm() {
           className="w-full rounded-xl border bg-background px-3 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
         />
       </div>
+      <p className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3.5 py-3 text-xs leading-5 text-muted-foreground">
+        “Already paid” sets the current debt position. Saving this liability does not
+        debit an account balance or create a separate payment transaction.
+      </p>
       <FormStatus state={state} />
       <button
         type="submit"

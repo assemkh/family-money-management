@@ -39,8 +39,7 @@ export default async function NetWorthPage() {
         <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
-              <Landmark aria-hidden="true" className="size-3.5" /> Phase 2B · Net worth
-              engine
+              <Landmark aria-hidden="true" className="size-3.5" /> Net worth overview
             </div>
             <p className="mt-7 text-xs font-semibold uppercase tracking-[0.14em] text-white/55">
               Current family net worth

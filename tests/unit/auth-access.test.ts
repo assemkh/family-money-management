@@ -14,6 +14,8 @@ describe("route access", () => {
     expect(isPublicRoute("/forgot-password")).toBe(true);
     expect(isPublicRoute("/api/health")).toBe(true);
     expect(isPublicRoute("/auth/callback")).toBe(true);
+    expect(isPublicRoute("/opengraph-image")).toBe(true);
+    expect(isPublicRoute("/robots.txt")).toBe(true);
     expect(isPublicRoute("/change-password")).toBe(false);
     expect(isPublicRoute("/dashboard")).toBe(false);
   });

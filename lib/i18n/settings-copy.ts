@@ -235,7 +235,7 @@ type CategoryKind =
 
 const english = {
   hero: {
-    badge: "Phase 3B · Household controls",
+    badge: "Household controls",
     title: "Shape the system around your family.",
     description:
       "One calm control room for planning defaults, financial signals, family access, language, and manual valuations.",
@@ -559,7 +559,7 @@ const english = {
 
 const arabic = {
   hero: {
-    badge: "المرحلة 3B · أدوات تحكم العائلة",
+    badge: "أدوات تحكم العائلة",
     title: "اضبط النظام بما يناسب عائلتك.",
     description:
       "مركز هادئ واحد لإعدادات التخطيط والمؤشرات المالية وصلاحيات العائلة واللغة والتقييمات اليدوية.",

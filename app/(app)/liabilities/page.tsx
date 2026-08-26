@@ -19,7 +19,7 @@ export default async function LiabilitiesPage() {
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
             <HandCoins className="size-3.5" aria-hidden="true" />
-            Phase 2A · Liabilities
+            Family liabilities
           </div>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
             See every amount still owed.

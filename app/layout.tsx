@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     template: `%s | ${getMessages().metadata.title}`,
   },
   description: getMessages().metadata.description,
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
 };
 
 const bodyFont = IBM_Plex_Sans({
