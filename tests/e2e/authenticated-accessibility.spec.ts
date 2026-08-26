@@ -6,7 +6,7 @@ import { expectNoPageOverflow } from "./support/layout";
 
 const commonRoutes = ["/dashboard", "/expenses", "/income", "/reports"] as const;
 const accessibilityBaseline: Record<string, Record<string, number>> = {
-  "/dashboard": { "color-contrast": 7, "scrollable-region-focusable": 1 },
+  "/dashboard": { "scrollable-region-focusable": 1 },
   "/expenses": { "color-contrast": 4 },
   "/income": { "color-contrast": 2 },
   "/reports": { "scrollable-region-focusable": 2 },

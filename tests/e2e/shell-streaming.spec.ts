@@ -16,7 +16,12 @@ const SHELL_MARKER = 'id="main-content"';
 const FALLBACK_MARKER = "Loading family financial brief";
 const CONTENT_MARKER = 'id="dashboard-kpis-heading"';
 
-type StreamMark = { marker: string; elapsedMs: number; byteOffset: number };
+type StreamMark = {
+  marker: string;
+  elapsedMs: number;
+  byteOffset: number;
+  chunkIndex: number;
+};
 
 async function readStreamMarks(url: string, cookie: string, markers: string[]) {
   const startedAt = performance.now();
@@ -30,9 +35,11 @@ async function readStreamMarks(url: string, cookie: string, markers: string[]) {
   const found = new Map<string, StreamMark>();
   let buffered = "";
   let bytes = 0;
+  let chunkIndex = -1;
   let firstChunkMs: number | null = null;
 
   for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
+    chunkIndex += 1;
     firstChunkMs ??= Number((performance.now() - startedAt).toFixed(2));
     bytes += chunk.byteLength;
     buffered += decoder.decode(chunk, { stream: true });
@@ -40,7 +47,12 @@ async function readStreamMarks(url: string, cookie: string, markers: string[]) {
 
     for (const marker of markers) {
       if (!found.has(marker) && buffered.includes(marker)) {
-        found.set(marker, { marker, elapsedMs, byteOffset: buffered.indexOf(marker) });
+        found.set(marker, {
+          marker,
+          elapsedMs,
+          byteOffset: buffered.indexOf(marker),
+          chunkIndex,
+        });
       }
     }
   }
@@ -77,14 +89,19 @@ test.describe("authenticated shell streaming", () => {
     ]);
 
     const shell = result.marks.get(SHELL_MARKER);
+    const fallback = result.marks.get(FALLBACK_MARKER);
     const content = result.marks.get(CONTENT_MARKER);
 
     expect(shell, "the application shell must appear in the stream").toBeTruthy();
+    expect(fallback, "the dashboard fallback must appear in the stream").toBeTruthy();
     expect(content, "the dashboard content must appear in the stream").toBeTruthy();
 
-    // The shell is emitted before the page's own data-dependent markup. If a future
-    // change moves household reads back above the shell, this ordering breaks first.
+    // HTML order alone cannot prove streaming because one complete chunk has the same
+    // marker order. Requiring an earlier network chunk protects the actual contract:
+    // the shell and fallback reach the browser before data-dependent page content.
     expect(shell!.byteOffset).toBeLessThan(content!.byteOffset);
+    expect(shell!.chunkIndex).toBeLessThan(content!.chunkIndex);
+    expect(fallback!.chunkIndex).toBeLessThan(content!.chunkIndex);
 
     await mkdir(performanceArtifactRoot, { recursive: true });
     await writeFile(
@@ -97,9 +114,14 @@ test.describe("authenticated shell streaming", () => {
           totalBytes: result.totalBytes,
           shellMs: shell!.elapsedMs,
           shellByteOffset: shell!.byteOffset,
+          shellChunkIndex: shell!.chunkIndex,
+          fallbackMs: fallback!.elapsedMs,
+          fallbackByteOffset: fallback!.byteOffset,
+          fallbackChunkIndex: fallback!.chunkIndex,
           contentMs: content!.elapsedMs,
           contentByteOffset: content!.byteOffset,
-          fallbackStreamed: result.marks.has(FALLBACK_MARKER),
+          contentChunkIndex: content!.chunkIndex,
+          fallbackStreamedBeforeContent: fallback!.chunkIndex < content!.chunkIndex,
         },
         null,
         2,

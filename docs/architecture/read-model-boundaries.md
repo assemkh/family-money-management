@@ -51,7 +51,7 @@ lib/finance/
   validation.ts                   unchanged
   csv.ts                          unchanged
   valuation/
-    rates.ts                      the only reader of exchange_rates
+    rates.ts                      canonical financial valuation rate reader
   read-models/
     registry.ts                   ReadModelKey -> routes, for invalidation
     cash-flow/
@@ -158,7 +158,8 @@ Unchanged by this refactor. Owns `convertToDzd`, `calculateDzdTotal`, `calculate
 and `classifyPlanVariance`. No I/O, no Supabase import, no `async`. Unit-tested
 directly.
 
-**`lib/finance/valuation/rates.ts` — the only reader of `exchange_rates`.**
+**`lib/finance/valuation/rates.ts` — the canonical financial Valuation reader of
+`exchange_rates`.**
 Takes over `latestRates()`, currently private at `lib/finance/data.ts:479`, and
 returns both the `ExchangeRateMap` the calculations need and the per-currency
 effective-date detail the accounts and settings surfaces display.
@@ -180,6 +181,11 @@ export function readEffectiveRates(context: HouseholdContext): Promise<Effective
 
 Six read models query `exchange_rates` today. After the split, they call
 `readEffectiveRates()` and none of them writes that query again.
+
+`lib/settings/data.ts` deliberately keeps a separate management projection of the
+same table. Settings displays and edits the underlying rate records; it does not
+calculate a financial Valuation. Making that screen depend on a calculation-oriented
+view model would blur the domain boundary rather than deepen it.
 
 ### Ownership rules for shared calculation code
 
@@ -242,7 +248,7 @@ after each step.
 
 | Module                        | Lines | Tables                                                          |
 | ----------------------------- | ----: | --------------------------------------------------------------- |
-| `valuation/rates.ts`          |    63 | `exchange_rates` — the only reader                              |
+| `valuation/rates.ts`          |    63 | canonical financial Valuation read of `exchange_rates`          |
 | `valuation/totals.ts`         |    28 | none, pure                                                      |
 | `read-models/query-errors.ts` |    13 | none, pure                                                      |
 | `cash-flow/income.ts`         |   105 | `income_entries`, `income_sources`, `profiles`                  |
@@ -299,19 +305,21 @@ Two unbounded reads and one duplicate read were removed. All three were verified
 `monthly_plan_versions` row for the Household and then found one in memory. At scale:
 
 ```
-Seq Scan on monthly_plan_versions (actual rows=242) — Buffers: shared hit=7
+Seq Scan on monthly_plan_versions (actual rows=242) — Buffers: shared hit=5
 ```
 
 Both now embed the current Revision through the existing composite foreign key,
 `monthly_plan_versions!monthly_plans_current_version_fk`:
 
 ```
-Nested Loop Left Join (actual rows=1) — Buffers: shared hit=4
-  -> Index Scan using monthly_plan_versions_id_plan_key (actual rows=1)
+Nested Loop Left Join (actual rows=1) — Buffers: shared hit=3
+  -> Index Scan using monthly_plan_versions_pkey (actual rows=1)
 ```
 
-Bounded regardless of how many revisions a Household accumulates, and it uses an index
-that already existed for the unique constraint.
+Bounded regardless of how many revisions a Household accumulates, and it uses the
+existing primary-key index. Run `npm run test:query-plans` to reseed the scaled local
+fixture, assert these planner choices, save the raw plans under `.artifacts/`, and
+clean up even if a check fails.
 
 **The duplicate settings read.** The dashboard read `settings` twice — once for
 `dashboard.preferences` and once for `financial_health.thresholds`. The first read
@@ -350,7 +358,9 @@ callers — 8 tests, taking the suite from 131 to 139.
 
 - [x] No domain module mixes domains; the two composed models span domains by design.
 - [x] `lib/finance/data.ts` no longer exists.
-- [x] Exactly one module reads `exchange_rates`; exactly one defines DZD conversion.
+- [x] Exactly one shared Valuation module resolves effective `exchange_rates` for
+      financial read models; Settings owns its separate management projection; exactly
+      one module defines DZD conversion.
 - [x] Financial totals match snapshot fixtures before and after — 15 snapshots in
       `tests/characterization/`, re-verified after every step.
 - [x] Dashboard Supabase request count fell from 16 to 13.

@@ -17,7 +17,7 @@ they use is defined in [`CONTEXT.md`](../../CONTEXT.md).
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | [`mutation-dependency-map.md`](mutation-dependency-map.md)     | Every mutation mapped to the read models and routes it affects, with the declared-versus-actual gap analysis         | Phase 4.A                       |
 | [`household-request-context.md`](household-request-context.md) | Interface for resolving verified identity, Household, locale, and the RLS-scoped client once per request             | Phase 2.A                       |
-| [`authenticated-action.md`](authenticated-action.md)           | Interface for authentication, authorization, validation, safe errors, and declarative invalidation in Server Actions | Phase 2, completed in Phase 4.A |
+| [`authenticated-action.md`](authenticated-action.md)           | Interface for authentication, authorization, validation, safe errors, and declarative invalidation in Server Actions | Specified in 1.B; scheduled 4.A |
 | [`read-model-boundaries.md`](read-model-boundaries.md)         | Domain layout replacing `lib/finance/data.ts`, and ownership rules for shared valuation code                         | Phase 2.B                       |
 
 Each Interface document states its named Interface, the Implementation responsibility
@@ -28,3 +28,4 @@ failed that test and are deliberately not proposed.
 
 - [`../refactor_responsive_perofrmance_plan.md`](../refactor_responsive_perofrmance_plan.md) — the five-phase roadmap and its acceptance criteria
 - [`../performance-baseline.md`](../performance-baseline.md) — reproducible Phase 1.A measurements, known debt ceilings, and privacy constraints
+- [`phase-1-2-verification.md`](phase-1-2-verification.md) — independent branch audit, corrections, completion decision, and reproducible Phase 1–2 gates

@@ -42,9 +42,10 @@ function latestRates(
 }
 
 /**
- * The only reader of `exchange_rates`. Returns the rate map every DZD Valuation
- * needs plus the per-currency effective date that the accounts and settings surfaces
- * display, so no read model writes that query again.
+ * The canonical `exchange_rates` reader for financial Valuation. It returns the rate
+ * map every DZD total needs plus effective-date details, so financial read models do
+ * not duplicate rate selection. Settings keeps its own management projection because
+ * that screen edits and displays the underlying rows rather than valuing money.
  */
 export async function readEffectiveRates(
   context: Pick<HouseholdContext, "db" | "householdId">,

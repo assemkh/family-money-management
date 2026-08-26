@@ -154,7 +154,8 @@ The first subphase records the real baseline before optimization. The release ta
 
 ## Phase 1 — Measurement and architecture foundations
 
-**Status: complete on 2026-08-26.** See the [Phase 1 completion record](#phase-1-completion-record).
+**Status: complete on 2026-08-26.** See the [Phase 1 completion record](#phase-1-completion-record)
+and the [independent Phase 1–2 verification](architecture/phase-1-2-verification.md).
 
 Outcome: establish trustworthy baselines and stable architecture Seams before changing runtime behavior.
 
@@ -163,8 +164,8 @@ Outcome: establish trustworthy baselines and stable architecture Seams before ch
 **Implementation status:** Complete on 2026-08-26. The reproducible measurements,
 known accessibility and overflow debt, privacy constraints, commands, generated
 artifacts, and continuation notes are recorded in
-[`docs/performance-baseline.md`](performance-baseline.md). Phase 1.B's first half is
-now complete as well; its second half is the next implementation subphase.
+[`docs/performance-baseline.md`](performance-baseline.md). Phase 1.B and Phase 2 are
+also complete; Phase 3.A is the next implementation subphase.
 
 **Implementation work**
 
@@ -197,8 +198,8 @@ now complete as well; its second half is the next implementation subphase.
 
 **Implementation status:** Complete on 2026-08-26. The canonical domain language, the
 three architecture decision records, the mutation-to-read-model dependency graph, and
-the three shared Interface specifications are written and verified. Phase 1 is complete;
-Phase 2.A is the next implementation subphase. Notes are recorded in
+the three shared Interface specifications are written and verified. Phase 1 and Phase
+2 are complete; Phase 3.A is the next implementation subphase. Notes are recorded in
 [Phase 1.B implementation notes](#phase-1b-implementation-notes) below.
 
 **Implementation work**
@@ -223,7 +224,7 @@ Second half — shared Interfaces (complete):
   `household-request-context.md`, `authenticated-action.md`,
   `read-model-boundaries.md` written
 - proposed `lib/auth/household-context.ts` — Interface specified; implemented in Phase 2.A
-- proposed `lib/actions/execute-household-action.ts` — Interface specified; implemented in Phase 2
+- proposed `lib/actions/execute-household-action.ts` — Interface specified; implementation scheduled for Phase 4.A
 
 **Acceptance criteria**
 
@@ -528,10 +529,10 @@ expense entries across 24 months and 242 Monthly Plan Revisions.
 
 - **An unbounded read is gone from two routes.** Dashboard and Reports each fetched
   every `monthly_plan_versions` row for the Household and found one in memory —
-  `Seq Scan ... rows=242, Buffers: shared hit=7`, growing with every revision ever
+  `Seq Scan ... rows=242, Buffers: shared hit=5`, growing with every revision ever
   saved. Both now embed the current Revision through the existing composite foreign
-  key: `Nested Loop Left Join ... rows=1, Buffers: shared hit=4`, using an
-  `Index Scan on monthly_plan_versions_id_plan_key`.
+  key: `Nested Loop Left Join ... rows=1, Buffers: shared hit=3`, using an
+  `Index Scan on monthly_plan_versions_pkey`.
 - **The duplicate dashboard settings read is gone.** It read `settings` twice, once
   per key. The first read must stay sequential because `trendRange` and `defaultMonth`
   decide the fan-out's date ranges, so it now carries both keys.
@@ -539,6 +540,10 @@ expense entries across 24 months and 242 Monthly Plan Revisions.
   `expense_entries_family_month_idx` via bitmap index scan. The `settings` read is a
   three-row sequential scan in one buffer, which is correct at that cardinality; an
   index there would be speculative and would cost write performance.
+
+`npm run test:query-plans` now reproduces these choices against the disposable scaled
+fixture, asserts the important plan nodes, writes the raw output to
+`.artifacts/performance/phase-2b-query-plans.txt`, and always tears the fixture down.
 
 | Route           | Phase 1 | After 2.A | After 2.B |
 | --------------- | ------: | --------: | --------: |

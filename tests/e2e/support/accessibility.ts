@@ -7,6 +7,19 @@ export async function expectNoSeriousAccessibilityViolations(
   label: string,
   allowedNodeCounts: Record<string, number> = {},
 ) {
+  // Audit the settled interface. Sampling a partially transparent entrance frame
+  // makes contrast depend on machine timing and can report accessible final colors
+  // as regressions. Finishing CSS animations is deterministic and keeps axe focused
+  // on the state a user actually reads.
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      const endTime = animation.effect?.getComputedTiming().endTime;
+      if (typeof endTime === "number" && Number.isFinite(endTime)) {
+        animation.finish();
+      }
+    }
+  });
+
   const results = await new AxeBuilder({ page }).analyze();
   const blocking = results.violations.filter(
     (violation) => violation.impact === "critical" || violation.impact === "serious",

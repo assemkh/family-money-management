@@ -175,7 +175,6 @@ have existing debt encoded by rule and maximum affected-node count:
 
 | Surface         | Rule                          | Maximum current nodes |
 | --------------- | ----------------------------- | --------------------: |
-| Dashboard       | `color-contrast`              |                     7 |
 | Dashboard       | `scrollable-region-focusable` |                     1 |
 | Expenses        | `color-contrast`              |                     4 |
 | Income          | `color-contrast`              |                     2 |
@@ -186,6 +185,10 @@ Any new serious/critical rule or any increase above these node counts fails the
 suite. When a later subphase fixes nodes, lower or remove the corresponding ceiling
 in `tests/e2e/authenticated-accessibility.spec.ts` in the same change. Never raise a
 ceiling to make a regression pass without a written exception.
+
+The independent Phase 1–2 branch audit on 2026-08-26 removed all 7 Dashboard contrast
+allowances and made axe evaluate the settled animation state, eliminating a
+machine-timing-dependent false positive without weakening the gate.
 
 Member Settings and its owner-only management dialog are intentionally skipped;
 owner English and owner Arabic cover those controls. Member access remains covered
@@ -302,6 +305,11 @@ it down. Its 15 committed snapshots are the guard that a query change alters no
 financial total; they are independent of this performance fixture, so the byte and
 timing figures above stay comparable.
 
+`npm run test:query-plans` independently seeds the 6,000-expense/242-revision scale
+fixture, verifies the important Phase 2.B planner choices, saves sanitized raw output
+under `.artifacts/performance/`, and always cleans up. Run it before accepting an index
+change or a new high-volume query shape.
+
 ## Handoff to Phase 3.A
 
 Phase 1 is complete. Phase 1.B produced the canonical vocabulary in
@@ -326,7 +334,9 @@ developer should:
    reversed entirely.
 4. Re-run `npm run test:read-models` before and after any change to a read model. A
    snapshot diff is the fastest signal that a query change moved a financial total.
-5. Keep the recorded accessibility and overflow ceilings falling, never rising, and
+5. Run `npm run test:query-plans` after changing a high-volume read or index; review
+   the generated plan artifact rather than inferring performance from query count.
+6. Keep the recorded accessibility and overflow ceilings falling, never rising, and
    delete each allowance in the same change that fixes it.
 
 Do not optimize from one timing number. Use this system to compare before/after

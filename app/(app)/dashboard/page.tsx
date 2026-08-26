@@ -375,7 +375,7 @@ export default async function DashboardPage({
                   className={`rounded-2xl border p-4 ${healthStyles[indicator.status]}`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-70">
+                    <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-90">
                       {indicator.label}
                     </p>
                     {indicator.status === "positive" ? (
@@ -385,7 +385,7 @@ export default async function DashboardPage({
                   <p className="mt-2 font-display text-xl font-semibold">
                     {indicator.value}
                   </p>
-                  <p className="mt-1 text-xs leading-5 opacity-70">
+                  <p className="mt-1 text-xs leading-5 opacity-90">
                     {indicator.description}
                   </p>
                 </div>
@@ -497,13 +497,13 @@ export default async function DashboardPage({
         <section className="rounded-[1.5rem] border bg-[hsl(39_35%_89%)] p-5 text-[hsl(164_25%_16%)] dark:bg-[hsl(164_18%_16%)] dark:text-foreground sm:p-7">
           <div className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-55">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-80">
                 Shared milestones
               </p>
               <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.04em]">
                 Goals turn surplus into direction.
               </h2>
-              <p className="mt-3 max-w-md text-sm leading-6 opacity-65">
+              <p className="mt-3 max-w-md text-sm leading-6 opacity-80">
                 Progress is updated only by explicit saving records, never by planned
                 percentages.
               </p>
@@ -520,7 +520,7 @@ export default async function DashboardPage({
                 <div>
                   <Target aria-hidden="true" className="mx-auto size-6 opacity-45" />
                   <p className="mt-3 font-medium">No active goal yet.</p>
-                  <p className="mt-1 text-sm opacity-60">
+                  <p className="mt-1 text-sm opacity-80">
                     Create one to chart shared progress.
                   </p>
                 </div>
