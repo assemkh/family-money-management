@@ -3,6 +3,10 @@
 **Audit date:** 2026-08-26  
 **Decision:** Phase 1.A, 1.B, 2.A, and 2.B are complete. Phase 3.A is next.
 
+**Current handoff:** Phase 3.A was completed and independently checked later the same
+day. Continue with Phase 3.B from the
+[Phase 3.A verification record](phase-3a-verification.md).
+
 This record audits the five-commit feature stack before it is integrated into `main`.
 It distinguishes completed acceptance work from later roadmap items, and gives the
 next developer or AI agent reproducible commands rather than relying on status prose.
@@ -81,5 +85,5 @@ These items are not missing Phase 1 or 2 work:
   Settings dialog remains guarded by non-increasing ceilings for later responsive and
   accessibility work. The Dashboard contrast ceiling is now removed.
 
-Do not reopen Phase 1 or 2 for these planned items. Start Phase 3.A from the adaptive
-navigation ADR and preserve every gate above.
+Do not reopen Phase 1 or 2 for these planned items. Phase 3.A subsequently completed;
+continue with Phase 3.B and preserve every gate above.

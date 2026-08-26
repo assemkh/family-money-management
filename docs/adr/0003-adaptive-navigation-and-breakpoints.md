@@ -175,6 +175,11 @@ prevent. Native `showModal()` supplies the focus trap, Escape handling, and focu
 restoration; the component adds backdrop dismissal and derives its open state from the
 route so Back can never reveal a stale overlay.
 
+**The profile menu now uses the existing Radix dropdown primitive.** It closes on
+Escape, outside interaction, and navigation, manages menu keyboard interaction, and
+restores focus to its trigger. The same browser contract that covers the sheet covers
+this second overlay, as decision 7 requires.
+
 **The Dashboard overflow allowance is deleted, not lowered.** It was caused by the
 trend chart's `min-w-[36rem]` escaping its `overflow-x-auto` container, because the
 grid item above defaulted to `min-width: auto`. `/reports` and `/settings` still

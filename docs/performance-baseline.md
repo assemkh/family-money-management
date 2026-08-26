@@ -322,7 +322,7 @@ specifications for the
 [authenticated action](architecture/authenticated-action.md), and
 [domain read models](architecture/read-model-boundaries.md).
 
-Phase 3.A rebuilds the navigation shell. Before changing any breakpoint, the next
+Phase 3.A rebuilt the navigation shell. Before adapting pages in Phase 3.B, the next
 developer should:
 
 1. Read [ADR 0003](adr/0003-adaptive-navigation-and-breakpoints.md) in full. The shell

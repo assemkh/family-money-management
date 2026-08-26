@@ -172,6 +172,56 @@ test("active state and aria-current agree on every destination", async ({ page }
   }
 });
 
+test("the phone More control indicates a current destination inside its sheet", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 820 });
+  await page.goto("/settings");
+
+  const more = page.locator("#phone-navigation button[aria-haspopup='dialog']:visible");
+  await expect(more).toHaveAttribute("data-contains-current", "true");
+
+  await more.click();
+  await expect(
+    page.getByRole("dialog").getByRole("link", { name: /settings|الإعدادات/i }),
+  ).toHaveAttribute("aria-current", "page");
+});
+
+test("the profile menu supports Escape, outside dismissal, and focus restoration", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 820 });
+  await page.goto("/dashboard");
+
+  const trigger = page.getByRole("button", {
+    name: /private workspace|مساحة خاصة/i,
+  });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expect
+    .poll(async () => menu.evaluate((node) => node.contains(document.activeElement)))
+    .toBe(true);
+
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await expect(menu).toBeVisible();
+  await page.mouse.click(8, 200);
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  // Route navigation must also dismiss the overlay instead of leaving stale chrome.
+  await trigger.click();
+  await menu.getByRole("menuitem", { name: /settings|الإعدادات/i }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(menu).toBeHidden();
+});
+
 test("fixed navigation never covers the end of page content", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 820 });
   await page.goto("/accounts");

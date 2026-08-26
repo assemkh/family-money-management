@@ -29,3 +29,4 @@ failed that test and are deliberately not proposed.
 - [`../refactor_responsive_perofrmance_plan.md`](../refactor_responsive_perofrmance_plan.md) — the five-phase roadmap and its acceptance criteria
 - [`../performance-baseline.md`](../performance-baseline.md) — reproducible Phase 1.A measurements, known debt ceilings, and privacy constraints
 - [`phase-1-2-verification.md`](phase-1-2-verification.md) — independent branch audit, corrections, completion decision, and reproducible Phase 1–2 gates
+- [`phase-3a-verification.md`](phase-3a-verification.md) — adaptive-shell audit, corrections, acceptance matrix, and Phase 3.B handoff

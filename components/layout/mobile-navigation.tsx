@@ -18,6 +18,9 @@ export function MobileNavigation({ messages }: { messages: Messages }) {
   const pathname = usePathname();
   const active = activeDestination(pathname);
   const destinations = phoneBarDestinations();
+  const sheetContainsActiveDestination =
+    active !== null &&
+    !destinations.some((destination) => destination.id === active.id);
 
   return (
     <nav
@@ -62,7 +65,10 @@ export function MobileNavigation({ messages }: { messages: Messages }) {
             onClick={open}
             aria-expanded={expanded}
             aria-haspopup="dialog"
-            className="flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-medium transition hover:text-white"
+            data-contains-current={sheetContainsActiveDestination || undefined}
+            className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-medium transition hover:text-white ${
+              sheetContainsActiveDestination ? "text-white" : ""
+            }`}
           >
             <Menu aria-hidden="true" className="size-[1.1rem]" />
             <span className="text-balance leading-tight">

@@ -3,6 +3,13 @@ import { ChevronDown, LogOut, Settings2, ShieldCheck, UserRound } from "lucide-r
 
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { HouseholdMember } from "@/lib/auth/household-context";
 import { formatFullDate, formatMonth } from "@/lib/formatting/date";
 import type { Locale } from "@/lib/i18n/config";
@@ -50,24 +57,31 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
               systemLabel={messages.shell.themeSystem}
             />
           </div>
-          <details className="group relative">
-            <summary
-              className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-full bg-primary ps-3 pe-2 text-sm font-semibold text-primary-foreground shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"
-              aria-label={messages.shell.privateWorkspace}
+          <DropdownMenu dir={locale === "ar" ? "rtl" : "ltr"}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="group flex h-11 cursor-pointer items-center gap-2 rounded-full bg-primary ps-3 pe-2 text-sm font-semibold text-primary-foreground shadow-sm"
+                aria-label={messages.shell.privateWorkspace}
+              >
+                <span className="grid size-6 place-items-center rounded-full bg-white/12">
+                  <UserRound aria-hidden="true" className="size-3.5" />
+                </span>
+                <span className="hidden max-w-24 truncate sm:block">
+                  {member.displayName}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="w-64 rounded-2xl p-2 shadow-xl"
             >
-              <span className="grid size-6 place-items-center rounded-full bg-white/12">
-                <UserRound aria-hidden="true" className="size-3.5" />
-              </span>
-              <span className="hidden max-w-24 truncate sm:block">
-                {member.displayName}
-              </span>
-              <ChevronDown
-                aria-hidden="true"
-                className="size-3.5 transition-transform group-open:rotate-180"
-              />
-            </summary>
-            <div className="absolute end-0 top-12 z-50 w-64 rounded-2xl border bg-popover p-2 text-popover-foreground shadow-xl">
-              <div className="rounded-xl bg-muted/65 px-3 py-2.5">
+              <DropdownMenuLabel className="rounded-xl bg-muted/65 px-3 py-2.5">
                 <p className="truncate text-sm font-semibold">{member.displayName}</p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   @{member.username} ·{" "}
@@ -75,43 +89,42 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
                     ? messages.shell.roleOwner
                     : messages.shell.roleMember}
                 </p>
-              </div>
-              <Link
-                href="/settings"
-                className="mt-1 flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
-              >
-                <Settings2 aria-hidden="true" className="size-4" />
-                {messages.navigation.settings}
-              </Link>
-              <Link
-                href="/change-password"
-                className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
-              >
-                <ShieldCheck aria-hidden="true" className="size-4" />
-                {messages.shell.changePassword}
-              </Link>
+              </DropdownMenuLabel>
+              <DropdownMenuItem asChild className="mt-1 min-h-11 rounded-lg px-3 py-2">
+                <Link href="/settings">
+                  <Settings2 aria-hidden="true" className="size-4" />
+                  {messages.navigation.settings}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="min-h-11 rounded-lg px-3 py-2">
+                <Link href="/change-password">
+                  <ShieldCheck aria-hidden="true" className="size-4" />
+                  {messages.shell.changePassword}
+                </Link>
+              </DropdownMenuItem>
               <form action={logoutAction}>
                 <input type="hidden" name="scope" value="local" />
-                <button
-                  type="submit"
-                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
-                >
-                  <LogOut aria-hidden="true" className="size-4" />
-                  {messages.shell.signOutDevice}
-                </button>
+                <DropdownMenuItem asChild className="min-h-11 rounded-lg px-3 py-2">
+                  <button type="submit" className="w-full justify-start">
+                    <LogOut aria-hidden="true" className="size-4" />
+                    {messages.shell.signOutDevice}
+                  </button>
+                </DropdownMenuItem>
               </form>
               <form action={logoutAction}>
                 <input type="hidden" name="scope" value="global" />
-                <button
-                  type="submit"
-                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                <DropdownMenuItem
+                  asChild
+                  className="min-h-11 rounded-lg px-3 py-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
                 >
-                  <LogOut aria-hidden="true" className="size-4" />
-                  {messages.shell.signOutEverywhere}
-                </button>
+                  <button type="submit" className="w-full justify-start">
+                    <LogOut aria-hidden="true" className="size-4" />
+                    {messages.shell.signOutEverywhere}
+                  </button>
+                </DropdownMenuItem>
               </form>
-            </div>
-          </details>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

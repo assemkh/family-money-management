@@ -39,7 +39,10 @@ const ThemeSwitcher = ({
   const { theme, setTheme } = useTheme();
 
   if (!mounted) {
-    return null;
+    // Keep the trigger's final footprint during SSR and hydration. The control is now
+    // visible on phones, so returning null would shift the profile menu by 44px once
+    // next-themes mounts.
+    return <span aria-hidden="true" className="block size-11" />;
   }
 
   const ICON_SIZE = 16;

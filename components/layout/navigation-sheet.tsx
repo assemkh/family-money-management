@@ -59,7 +59,7 @@ export function NavigationSheet({ messages, trigger }: NavigationSheetProps) {
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
-        className="m-0 mt-auto max-h-[85dvh] w-full max-w-none overflow-y-auto rounded-t-[1.5rem] border-t bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:w-[min(34rem,calc(100%-2rem))] sm:rounded-[1.5rem] sm:border"
+        className="m-0 mt-auto max-h-[85dvh] w-full max-w-none overscroll-contain overflow-y-auto rounded-t-[1.5rem] border-t bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm sm:m-auto sm:max-h-[calc(100dvh-3rem)] sm:w-[min(34rem,calc(100%-2rem))] sm:rounded-[1.5rem] sm:border"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-card/95 px-5 py-4 backdrop-blur">
           <h2 id={titleId} className="font-display text-xl font-semibold">

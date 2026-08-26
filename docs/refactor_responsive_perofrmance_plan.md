@@ -165,7 +165,7 @@ Outcome: establish trustworthy baselines and stable architecture Seams before ch
 known accessibility and overflow debt, privacy constraints, commands, generated
 artifacts, and continuation notes are recorded in
 [`docs/performance-baseline.md`](performance-baseline.md). Phase 1.B and Phase 2 are
-also complete; Phase 3.A is the next implementation subphase.
+also complete; Phase 3.A is complete and Phase 3.B is the next implementation subphase.
 
 **Implementation work**
 
@@ -199,7 +199,7 @@ also complete; Phase 3.A is the next implementation subphase.
 **Implementation status:** Complete on 2026-08-26. The canonical domain language, the
 three architecture decision records, the mutation-to-read-model dependency graph, and
 the three shared Interface specifications are written and verified. Phase 1 and Phase
-2 are complete; Phase 3.A is the next implementation subphase. Notes are recorded in
+2 are complete; Phase 3.A is complete and Phase 3.B is the next implementation subphase. Notes are recorded in
 [Phase 1.B implementation notes](#phase-1b-implementation-notes) below.
 
 **Implementation work**
@@ -598,7 +598,8 @@ Outcome: make every feature discoverable and comfortable on phones and tablets w
 **Implementation status:** Complete on 2026-08-26. One route catalog drives all four
 navigation surfaces, the tablet mode exists, and the Accounts catch-all is replaced by
 an accessible sheet. Notes are recorded in
-[Phase 3.A implementation notes](#phase-3a-implementation-notes) below.
+[Phase 3.A implementation notes](#phase-3a-implementation-notes) below and independently
+checked in the [Phase 3.A verification record](architecture/phase-3a-verification.md).
 
 **Implementation work**
 
@@ -686,15 +687,15 @@ with that rationale beside them and must fall there, never rise.
 
 **Tests added**
 
-| Suite            | Coverage                                                                                                                                                                                                                                                                                                                     |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 10 unit tests    | Catalog completeness, unique ids and hrefs, both locales, single active destination, nested routes, prefix-sibling safety                                                                                                                                                                                                    |
-| 34 browser tests | Reachability and shell overflow across five modes plus 320px, focus trap and restoration, backdrop and Escape dismissal, navigation closing the sheet, Back leaving no stale overlay, `aria-current` agreement, fixed-bar clearance, 200% text zoom, 12px label floor, 44px targets — each run for English and Arabic owners |
+| Suite            | Coverage                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10 unit tests    | Catalog completeness, unique ids and hrefs, both locales, single active destination, nested routes, prefix-sibling safety                                                                                                                                                                                                                                                     |
+| 48 browser tests | Reachability and shell overflow across five modes plus 320px, focus trap and restoration, backdrop and Escape dismissal, navigation closing the sheet, Back leaving no stale overlay, profile-menu behavior, phone hidden-route state, `aria-current` agreement, fixed-bar clearance, 200% text zoom, 12px label floor, 44px targets — each run for English and Arabic owners |
 
 **Verification**
 
 `npm run check` passes with 103 unit tests, up from 93. The database suite passes 139.
-The browser suite passes 163 with 2 intentional skips, up from 119. The 15
+The browser suite passes 167 with 2 intentional skips, up from 119. The 15
 characterization snapshots are unchanged, confirming the shell work touched no
 financial output.
 
