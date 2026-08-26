@@ -253,23 +253,51 @@ Supabase database tests, the production build, the native Next.js analyzer, and 
 expanded browser matrix. Playwright completed 108 tests with two intentional member
 Settings skips. Teardown removed every synthetic household and Auth fixture.
 
-## Handoff to Phase 1.B
+## Reproduction record
 
-Phase 1.B is documentation and Interface design only; it must not change production
-behavior. The next agent or developer should:
+The full suite was re-run on 2026-08-26 against a clean local Supabase stack to
+confirm the baseline is reproducible before Phase 1 was closed.
 
-1. Read `docs/refactor_responsive_perofrmance_plan.md` and this baseline in full.
-2. Add the canonical financial language to `CONTEXT.md`.
-3. Add ADRs for financial source-of-truth rules, authenticated rendering/cache
-   safety, and adaptive navigation/breakpoints.
-4. Map every mutation to Dashboard, Reports, Monthly Plan, Net Worth, and detail
-   read models/routes it can invalidate.
-5. Specify the household request-context and authenticated-action Interfaces,
-   their hidden responsibilities, consumers, and deletion-test rationale.
-6. Keep private cross-request caching forbidden unless household-keyed,
-   authorization-safe, bounded, and explicitly invalidated.
-7. Run `npm run check`, `npm run supabase:test:db`, and
-   `npm run test:phase-1a` before marking Phase 1.B complete.
+| Result                         | Recorded baseline               | Re-run                                |
+| ------------------------------ | ------------------------------- | ------------------------------------- |
+| Playwright                     | 108 passed, 2 intentional skips | 108 passed, 2 skips                   |
+| Supabase database tests        | 131 across 10 files             | 131 across 10 files                   |
+| Unit tests                     | 78                              | 78                                    |
+| Fixture residue after teardown | zero                            | zero households, profiles, Auth users |
+| Structural screenshots         | 74                              | 74                                    |
+
+Transferred bytes, initial JavaScript, and Supabase request counts reproduced
+**exactly** in all fourteen English route/profile rows — including the dashboard's
+16 requests, Reports' 10, Net Worth's 8, and Settings' 8. TTFB and LCP moved within
+the run-to-run variance this document already warns about; the largest LCP difference
+was 12ms on Monthly Plan desktop.
+
+Byte and request counts are therefore safe to use as regression gates. Timing values
+are not, and must be compared only within a single machine and profile.
+
+## Handoff to Phase 2.A
+
+Phase 1 is complete. Phase 1.B produced the canonical vocabulary in
+[`CONTEXT.md`](../CONTEXT.md), three architecture decision records under
+[`docs/adr/`](adr/README.md), the
+[mutation dependency map](architecture/mutation-dependency-map.md), and Interface
+specifications for the
+[household request context](architecture/household-request-context.md),
+[authenticated action](architecture/authenticated-action.md), and
+[domain read models](architecture/read-model-boundaries.md).
+
+Phase 2.A implements the household request-context Module. Before changing the
+protected layout, the next developer should:
+
+1. Read the three Interface specifications and ADR 0002 in full.
+2. Re-run `npm run test:phase-1a` on the target machine to establish that machine's
+   own timing reference. Do not compare timings across machines.
+3. Treat the recorded per-route transferred bytes, initial JavaScript, and Supabase
+   request counts as the regression gate; treat TTFB, LCP, and CLS as directional.
+4. Re-record the dashboard's 16 Supabase requests after the context Module lands. The
+   trace shows settings read twice and two `getClaims()` calls; both should fall.
+5. Keep the recorded accessibility and overflow ceilings falling, never rising, and
+   delete each allowance in the same change that fixes it.
 
 Do not optimize from one timing number. Use this system to compare before/after
 measurements, preserve financial correctness and RLS, lower recorded debt ceilings

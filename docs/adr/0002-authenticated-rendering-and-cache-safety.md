@@ -41,9 +41,9 @@ What is true today:
   called from a Server Function, it "currently also causes all previously visited
   pages to refresh when navigated to again", and that "this behavior is temporary and
   will be updated in the future to apply only to the specific path."
-- `createAdminClient()` uses the secret key and bypasses RLS entirely. It is used in
-  exactly four action files, always for Auth administration or an Owner-gated profile
-  write — never to read financial data.
+- `createAdminClient()` uses the secret key and bypasses RLS entirely. It is used at
+  exactly six call sites across three action files, always for Auth administration or
+  an Owner-gated profile write — never to read financial data.
 
 The last two points matter together: today's declared-path gaps in
 [`docs/architecture/mutation-dependency-map.md`](../architecture/mutation-dependency-map.md)

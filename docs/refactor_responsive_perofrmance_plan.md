@@ -1,6 +1,6 @@
 # Refactor, Responsive, and Performance Plan
 
-Status: implementation in progress  
+Status: Phase 1 complete; Phase 2.A is next  
 Audit date: 2026-08-26  
 Scope: authenticated Next.js application, Supabase data layer, responsive behavior, accessibility, loading behavior, and delivery quality  
 Implementation model: five phases, with two implementation subphases in each phase
@@ -154,6 +154,8 @@ The first subphase records the real baseline before optimization. The release ta
 
 ## Phase 1 — Measurement and architecture foundations
 
+**Status: complete on 2026-08-26.** See the [Phase 1 completion record](#phase-1-completion-record).
+
 Outcome: establish trustworthy baselines and stable architecture Seams before changing runtime behavior.
 
 ### Phase 1.A — Performance, responsive, and regression baseline
@@ -193,12 +195,10 @@ now complete as well; its second half is the next implementation subphase.
 
 ### Phase 1.B — Domain map, decisions, and shared Interfaces
 
-**Implementation status:** First half complete on 2026-08-26. The canonical domain
-language, the three architecture decision records, and the mutation-to-read-model
-dependency graph are written and verified. The second half — the household
-request-context Interface, the authenticated-action Interface, the domain read-model
-boundaries, and the ownership rules for shared valuation code — is the next
-implementation step. Notes are recorded in
+**Implementation status:** Complete on 2026-08-26. The canonical domain language, the
+three architecture decision records, the mutation-to-read-model dependency graph, and
+the three shared Interface specifications are written and verified. Phase 1 is complete;
+Phase 2.A is the next implementation subphase. Notes are recorded in
 [Phase 1.B implementation notes](#phase-1b-implementation-notes) below.
 
 **Implementation work**
@@ -210,29 +210,31 @@ First half — domain map and decisions (complete):
 - [x] Document the dependency graph from each mutation to all affected read models and routes.
 - [x] Document caching policy: request-local deduplication is permitted; private cross-request cache is forbidden unless it is household-keyed, authorization-safe, bounded, and explicitly invalidated. Recorded as ADR 0002, decisions 2 and 3.
 
-Second half — shared Interfaces (next):
+Second half — shared Interfaces (complete):
 
-- [ ] Define the household request-context Interface and authenticated-action Interface before moving call sites.
-- [ ] Define the domain read-model boundaries and ownership rules for shared valuation/calculation code.
+- [x] Define the household request-context Interface and authenticated-action Interface before moving call sites.
+- [x] Define the domain read-model boundaries and ownership rules for shared valuation/calculation code.
 
 **Primary files and Modules**
 
 - `CONTEXT.md` — written
 - `docs/adr/` — `README.md` and records 0001, 0002, 0003 written
-- `docs/architecture/mutation-dependency-map.md` — written
-- proposed `lib/auth/household-context.ts` — second half
-- proposed `lib/actions/execute-household-action.ts` — second half
+- `docs/architecture/` — `README.md`, `mutation-dependency-map.md`,
+  `household-request-context.md`, `authenticated-action.md`,
+  `read-model-boundaries.md` written
+- proposed `lib/auth/household-context.ts` — Interface specified; implemented in Phase 2.A
+- proposed `lib/actions/execute-household-action.ts` — Interface specified; implemented in Phase 2
 
 **Acceptance criteria**
 
-- Each proposed Module has a named Interface, hidden Implementation responsibility, consumers, and deletion-test rationale. — _second half_
+- [x] Each proposed Module has a named Interface, hidden Implementation responsibility, consumers, and deletion-test rationale.
 - [x] Every financial mutation maps to Dashboard, Reports, Monthly Plan, Net Worth, and detail routes that it can affect.
 - [x] The decisions state the RLS and cache-safety requirements explicitly.
 - [x] No production behavior changes in this subphase.
 
 #### Phase 1.B implementation notes
 
-_First half, recorded 2026-08-26._
+_Recorded 2026-08-26._
 
 **What was delivered**
 
@@ -243,6 +245,10 @@ _First half, recorded 2026-08-26._
 | [`docs/adr/0002-authenticated-rendering-and-cache-safety.md`](adr/0002-authenticated-rendering-and-cache-safety.md) | Nine rules on dynamic rendering, request-local memoization, the five-condition gate on any cross-request cache, and admin-client scope                                |
 | [`docs/adr/0003-adaptive-navigation-and-breakpoints.md`](adr/0003-adaptive-navigation-and-breakpoints.md)           | Ten rules defining the three shell modes, the additive `shell: 1200px` screen, the route catalog, and the single active-state predicate                               |
 | [`docs/architecture/mutation-dependency-map.md`](architecture/mutation-dependency-map.md)                           | All 30 mutations mapped to tables, read models, and routes, with the declared-versus-actual gap analysis                                                              |
+| [`docs/architecture/household-request-context.md`](architecture/household-request-context.md)                       | `lib/auth/household-context.ts` — three variants, hidden four-round-trip resolution, 49 consumers, deletion-test rationale                                            |
+| [`docs/architecture/authenticated-action.md`](architecture/authenticated-action.md)                                 | `lib/actions/execute-household-action.ts` — `defineHouseholdAction` with declarative `affects`, and the four actions deliberately left outside it                     |
+| [`docs/architecture/read-model-boundaries.md`](architecture/read-model-boundaries.md)                               | Domain layout replacing `lib/finance/data.ts`, the dashboard and report streaming split, valuation ownership rules, and extraction order                              |
+| [`docs/architecture/README.md`](architecture/README.md)                                                             | Index of current-implementation and refactor-design documents                                                                                                         |
 
 **Findings that change later phases**
 
@@ -267,12 +273,63 @@ _First half, recorded 2026-08-26._
 - **Three read-model defects were found and deferred to Phase 2.B:** the
   `getPortfolioPageData("investments")` branch is unreachable, `/dashboard` reads the
   `settings` table twice, and five member option lists ignore `is_active`.
+- **Identity resolution is duplicated, not merely repeated.** `readAuthState()` and
+  `readCurrentProfile()` each call `getClaims()`, and the protected layout awaits both
+  plus `getFamilyLocale()` in sequence. The same preamble is re-implemented by 14 read
+  models, 29 actions, and 25 `await createClient()` call sites — 49 consumers for the
+  one context Module.
+- **Twenty-nine of the 30 mutations share an identical four-step preamble**, and the
+  two action files have already drifted: two `invalidFields()` helpers with different
+  copy, two context readers differing by one role comparison, and a 13-entry
+  database-message table that exists in `finance.ts` and not in `settings.ts`.
+- **Only 11 of 28 exported types in `lib/finance/data.ts` are imported anywhere else.**
+  The other 17 are structural detail of return types that no consumer names, which is
+  the measurable form of "broad but not deep".
+- **Form parsing cannot be inferred.** `formData.get()` returns `null` where
+  `Object.fromEntries` returns `undefined`, and the optional amount and date schemas
+  guard on that difference; six of the 29 schemas are `.refine()`-wrapped and expose no
+  `shape`. The action Interface therefore declares its field list, with one escape
+  hatch for the checkbox form.
 
 **Verification**
 
-Documentation-only subphase, so no production behavior changed. `npm run check`
-(format, lint, typecheck, unit tests, production build) passes, and the tracked source
-tree is unchanged apart from the new documents.
+Documentation-only subphase, so no production behavior changed; no file under `app/`,
+`components/`, `lib/`, or `supabase/` was touched. Verified with `npm run check`
+(format, lint, typecheck, 78 unit tests, production build), `npm run supabase:test:db`,
+and `npm run test:phase-1a`. The production build confirms every authenticated route
+still renders dynamically.
+
+### Phase 1 completion record
+
+_Verified 2026-08-26._
+
+Both subphases meet their acceptance criteria and the full quality matrix was run from
+the current tree.
+
+| Gate                                            | Command                    | Result                                                 |
+| ----------------------------------------------- | -------------------------- | ------------------------------------------------------ |
+| Format, lint, types, unit tests, build          | `npm run check`            | Pass — 78 unit tests, production build clean           |
+| Database policy tests                           | `npm run supabase:test:db` | Pass — 131 tests across 10 files                       |
+| Browser, accessibility, responsive, performance | `npm run test:phase-1a`    | Pass — 108 passed, 2 intentional member-Settings skips |
+| Fixture cleanup                                 | teardown                   | Zero residual households, profiles, or Auth users      |
+
+The re-run reproduced the recorded baseline: transferred bytes, initial JavaScript, and
+Supabase request counts matched **exactly** in all fourteen English route/profile rows,
+including the dashboard's 16 requests. Timings varied within the documented run-to-run
+range. The reproduction table is in
+[`docs/performance-baseline.md`](performance-baseline.md).
+
+The production build confirms every authenticated route is still server-rendered on
+demand, which is the property ADR 0002 depends on.
+
+**Phase 1 outcome.** Measurement precedes optimization, and the architecture Seams are
+specified before any call site moves. Nothing in Phase 1 changed production behavior:
+Phase 1.A added test and observability infrastructure, and Phase 1.B touched no file
+under `app/`, `components/`, `lib/`, or `supabase/`.
+
+**Carried into Phase 2:** eleven under-declared mutations, the duplicated identity
+path across 49 consumers, three read-model defects, and the recorded accessibility and
+overflow ceilings that Phase 3 must lower rather than raise.
 
 ## Phase 2 — Server critical path and finance data Modules
 
