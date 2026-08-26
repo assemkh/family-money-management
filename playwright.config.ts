@@ -108,6 +108,7 @@ export default defineConfig({
         /authenticated-accessibility\.spec\.ts/,
         /performance-baseline\.spec\.ts/,
         /responsive-baseline\.spec\.ts/,
+        /shell-streaming\.spec\.ts/,
       ],
       use: {
         ...sharedBrowser,

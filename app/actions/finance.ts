@@ -21,8 +21,8 @@ import {
   savingsGoalStatusSchema,
   transferEntrySchema,
 } from "@/lib/finance/validation";
+import { readHouseholdContext } from "@/lib/auth/household-context";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 
 function invalidFields(error: {
   flatten: () => { fieldErrors: Record<string, string[]> };
@@ -34,22 +34,23 @@ function invalidFields(error: {
   };
 }
 
+/**
+ * A Server Action must return a state its form can render, so it uses the
+ * non-throwing context variant rather than the redirecting one. The
+ * must-change-password refusal matches the layout's redirect.
+ */
 async function readActionContext() {
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
+  const context = await readHouseholdContext();
+  if (!context || context.member.mustChangePassword) return null;
 
-  if (claimsError || typeof userId !== "string") return null;
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, family_id, role, must_change_password")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError || !profile || profile.must_change_password) return null;
-
-  return { profile, supabase };
+  return {
+    profile: {
+      id: context.member.id,
+      family_id: context.householdId,
+      role: context.member.role,
+    },
+    supabase: context.db,
+  };
 }
 
 function safeDatabaseMessage(

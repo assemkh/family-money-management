@@ -1,9 +1,8 @@
 import "server-only";
 
-import { readCurrentProfile } from "@/lib/auth/profile";
+import { requireHouseholdContext } from "@/lib/auth/household-context";
 import { getAlgiersDateValues } from "@/lib/formatting/date";
 import type { SupportedCurrency } from "@/lib/finance/validation";
-import { defaultLocale, supportedLocales, type Locale } from "@/lib/i18n/config";
 import {
   type CategoryType,
   parseAllocationDefaults,
@@ -11,26 +10,9 @@ import {
   parseFinancialHealthSettings,
   settingKeys,
 } from "@/lib/settings/config";
-import { createClient } from "@/lib/supabase/server";
-
-export async function getFamilyLocale(familyId: string): Promise<Locale> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("families")
-    .select("locale")
-    .eq("id", familyId)
-    .maybeSingle();
-  if (error || !data || !supportedLocales.includes(data.locale as Locale)) {
-    return defaultLocale;
-  }
-  return data.locale as Locale;
-}
 
 export async function getSettingsPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId, member } = await requireHouseholdContext();
   const { date } = getAlgiersDateValues();
   const [
     familyResult,
@@ -43,20 +25,20 @@ export async function getSettingsPageData() {
     supabase
       .from("families")
       .select("id, name, base_currency, timezone, locale, date_format")
-      .eq("id", profile.familyId)
+      .eq("id", householdId)
       .maybeSingle(),
     supabase
       .from("profiles")
       .select(
         "id, display_name, username, role, is_active, must_change_password, last_login_at",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("role")
       .order("display_name"),
     supabase
       .from("settings")
       .select("key, value, updated_at")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .in("key", [
         settingKeys.allocationDefaults,
         settingKeys.dashboardPreferences,
@@ -65,20 +47,20 @@ export async function getSettingsPageData() {
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
     supabase
       .from("expense_categories")
       .select("id, name, type, parent_category_id, is_active, sort_order")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("type")
       .order("sort_order")
       .order("name"),
     supabase
       .from("income_sources")
       .select("id, name, owner_member_id, is_active, sort_order")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("sort_order")
       .order("name"),
   ]);
@@ -109,8 +91,8 @@ export async function getSettingsPageData() {
   });
 
   return {
-    canManage: profile.role === "owner",
-    currentUserId: profile.id,
+    canManage: member.role === "owner",
+    currentUserId: member.id,
     defaultDate: date,
     family: {
       name: familyResult.data.name,

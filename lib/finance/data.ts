@@ -1,6 +1,9 @@
 import "server-only";
 
-import { readCurrentProfile } from "@/lib/auth/profile";
+import {
+  readHouseholdContext,
+  requireHouseholdContext,
+} from "@/lib/auth/household-context";
 import { getAlgiersDateValues } from "@/lib/formatting/date";
 import {
   calculateAveragePlanVariance,
@@ -21,7 +24,6 @@ import {
   parseFinancialHealthSettings,
   settingKeys,
 } from "@/lib/settings/config";
-import { createClient } from "@/lib/supabase/server";
 
 export type MoneyTotal = {
   currency: SupportedCurrency;
@@ -299,34 +301,31 @@ function ensureNoQueryErrors(
 }
 
 export async function getIncomePageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId, member } = await requireHouseholdContext();
   const { month, monthStart } = getAlgiersDateValues();
   const [membersResult, sourcesResult, monthEntriesResult, recentResult] =
     await Promise.all([
       supabase
         .from("profiles")
         .select("id, display_name, is_active")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .order("display_name"),
       supabase
         .from("income_sources")
         .select("id, name, owner_member_id")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("is_active", true)
         .order("sort_order")
         .order("name"),
       supabase
         .from("income_entries")
         .select("amount, currency, member_id")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("income_month", monthStart),
       supabase
         .from("income_entries")
         .select("id, income_month, amount, currency, note, source_id, member_id")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .order("income_month", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(12),
@@ -355,8 +354,8 @@ export async function getIncomePageData() {
   }));
 
   return {
-    canManageMembers: profile.role === "owner",
-    hasHouseholdMember: members.some((member) => member.id !== profile.id),
+    canManageMembers: member.role === "owner",
+    hasHouseholdMember: members.some((row) => row.id !== member.id),
     defaultMonth: month,
     totals: addTotals(monthEntries),
     memberTotals,
@@ -383,21 +382,15 @@ export async function getIncomePageData() {
 }
 
 export async function getExpensePageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId, member } = await requireHouseholdContext();
   const { date, monthStart } = getAlgiersDateValues();
   const [membersResult, categoriesResult, accountsResult, monthResult, recentResult] =
     await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, display_name")
-        .eq("family_id", profile.familyId),
+      supabase.from("profiles").select("id, display_name").eq("family_id", householdId),
       supabase
         .from("expense_categories")
         .select("id, name, type")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("is_active", true)
         .order("type")
         .order("sort_order")
@@ -405,21 +398,21 @@ export async function getExpensePageData() {
       supabase
         .from("accounts")
         .select("id, name, currency, current_balance")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("is_active", true)
         .order("sort_order")
         .order("name"),
       supabase
         .from("expense_entries")
         .select("amount, currency")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("month_key", monthStart),
       supabase
         .from("expense_entries")
         .select(
           "id, transaction_date, amount, currency, note, subcategory_id, payment_account_id, member_id, main_category",
         )
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .order("transaction_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(12),
@@ -440,7 +433,7 @@ export async function getExpensePageData() {
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]));
 
   return {
-    currentMemberName: profile.displayName,
+    currentMemberName: member.displayName,
     defaultDate: date,
     totals: addTotals(monthResult.data ?? []),
     categories: categories.map((category): ExpenseCategoryOption => ({
@@ -503,23 +496,20 @@ function latestRates(
 }
 
 export async function getAccountsPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date } = getAlgiersDateValues();
   const [accountsResult, ratesResult] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, type, currency, current_balance")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true)
       .order("sort_order")
       .order("name"),
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
   ]);
@@ -569,16 +559,13 @@ export async function getAccountsPageData() {
 }
 
 export async function getTransfersPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date } = getAlgiersDateValues();
   const [accountsResult, transfersResult] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, currency, current_balance")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true)
       .order("sort_order")
       .order("name"),
@@ -587,7 +574,7 @@ export async function getTransfersPageData() {
       .select(
         "id, transfer_date, from_account_id, to_account_id, amount, currency, note",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("transfer_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(20),
@@ -622,9 +609,7 @@ export async function getTransfersPageData() {
 }
 
 export async function getPortfolioPageData(kind: "assets" | "investments") {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const query =
     kind === "assets"
       ? supabase
@@ -632,7 +617,7 @@ export async function getPortfolioPageData(kind: "assets" | "investments") {
           .select(
             "id, name, asset_type, purchase_value, current_value, currency, purchase_date, notes",
           )
-          .eq("family_id", profile.familyId)
+          .eq("family_id", householdId)
           .eq("is_active", true)
           .order("created_at", { ascending: false })
       : supabase
@@ -640,7 +625,7 @@ export async function getPortfolioPageData(kind: "assets" | "investments") {
           .select(
             "id, name, type, purchase_cost, current_value, currency, purchase_date, notes",
           )
-          .eq("family_id", profile.familyId)
+          .eq("family_id", householdId)
           .order("created_at", { ascending: false });
   const { data, error } = await query;
   if (error)
@@ -662,10 +647,7 @@ export async function getPortfolioPageData(kind: "assets" | "investments") {
 }
 
 export async function getInvestmentPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date, monthStart } = getAlgiersDateValues();
   const [investmentsResult, eventsResult, membersResult] = await Promise.all([
     supabase
@@ -673,22 +655,19 @@ export async function getInvestmentPageData() {
       .select(
         "id, name, type, purchase_cost, current_value, currency, purchase_date, notes",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("created_at", { ascending: false }),
     supabase
       .from("financial_transactions")
       .select(
         "id, transaction_date, month_key, amount, currency, source_id, note, member_id",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("type", "investment")
       .order("transaction_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(30),
-    supabase
-      .from("profiles")
-      .select("id, display_name")
-      .eq("family_id", profile.familyId),
+    supabase.from("profiles").select("id, display_name").eq("family_id", householdId),
   ]);
   ensureNoQueryErrors(
     [investmentsResult, eventsResult, membersResult],
@@ -734,15 +713,13 @@ export async function getInvestmentPageData() {
 }
 
 export async function getLiabilitiesPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { data, error } = await supabase
     .from("liabilities")
     .select(
       "id, name, type, original_amount, paid_amount, monthly_payment, currency, due_date, status",
     )
-    .eq("family_id", profile.familyId)
+    .eq("family_id", householdId)
     .order("created_at", { ascending: false });
   if (error) throw new Error("Liability data could not be loaded.");
   return (data ?? []).map((row): LiabilityItem => ({
@@ -759,22 +736,20 @@ export async function getLiabilitiesPageData() {
 }
 
 export async function getRecurringPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const [itemsResult, categoriesResult] = await Promise.all([
     supabase
       .from("recurring_transactions")
       .select(
         "id, name, type, amount, currency, frequency, custom_interval_days, next_due_date, category_id",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("active", true)
       .order("next_due_date", { ascending: true }),
     supabase
       .from("expense_categories")
       .select("id, name, type")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true)
       .order("name"),
   ]);
@@ -823,9 +798,7 @@ function shiftMonthKey(month: string, amount: number) {
 }
 
 export async function getMonthlyPlanPageData(requestedMonth?: string) {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date, month: currentMonth } = getAlgiersDateValues();
   const selectedMonth = validSelectedMonth(requestedMonth, currentMonth);
 
@@ -834,28 +807,25 @@ export async function getMonthlyPlanPageData(requestedMonth?: string) {
       supabase
         .from("monthly_plans")
         .select("id, month_key, status, current_version_id")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .order("month_key", { ascending: false })
         .limit(36),
-      supabase
-        .from("profiles")
-        .select("id, display_name")
-        .eq("family_id", profile.familyId),
+      supabase.from("profiles").select("id, display_name").eq("family_id", householdId),
       supabase
         .from("income_entries")
         .select("amount, currency")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("income_month", `${selectedMonth}-01`),
       supabase
         .from("exchange_rates")
         .select("currency, rate_to_base, effective_date")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .lte("effective_date", date)
         .order("effective_date", { ascending: false }),
       supabase
         .from("settings")
         .select("value")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("key", settingKeys.allocationDefaults)
         .maybeSingle(),
     ]);
@@ -995,10 +965,7 @@ function mapSavingsGoal(row: {
 }
 
 export async function getSavingsGoalsPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date, monthStart } = getAlgiersDateValues();
   const [goalsResult, contributionsResult, contributionTotalsResult, membersResult] =
     await Promise.all([
@@ -1007,7 +974,7 @@ export async function getSavingsGoalsPageData() {
         .select(
           "id, name, target_amount, current_amount, currency, target_date, priority, status, notes",
         )
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .neq("status", "cancelled")
         .order("priority")
         .order("created_at"),
@@ -1016,7 +983,7 @@ export async function getSavingsGoalsPageData() {
         .select(
           "id, transaction_date, month_key, amount, currency, source_id, note, member_id",
         )
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("type", "saving")
         .order("transaction_date", { ascending: false })
         .order("created_at", { ascending: false })
@@ -1024,12 +991,9 @@ export async function getSavingsGoalsPageData() {
       supabase
         .from("financial_transactions")
         .select("month_key, amount, currency")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .eq("type", "saving"),
-      supabase
-        .from("profiles")
-        .select("id, display_name")
-        .eq("family_id", profile.familyId),
+      supabase.from("profiles").select("id, display_name").eq("family_id", householdId),
     ]);
   ensureNoQueryErrors(
     [goalsResult, contributionsResult, contributionTotalsResult, membersResult],
@@ -1071,14 +1035,11 @@ export async function getSavingsGoalsPageData() {
 }
 
 export async function getDashboardPageData(requestedMonth?: string) {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { data: dashboardSettings, error: dashboardSettingsError } = await supabase
     .from("settings")
     .select("value")
-    .eq("family_id", profile.familyId)
+    .eq("family_id", householdId)
     .eq("key", settingKeys.dashboardPreferences)
     .maybeSingle();
   if (dashboardSettingsError) {
@@ -1115,19 +1076,19 @@ export async function getDashboardPageData(requestedMonth?: string) {
     supabase
       .from("income_entries")
       .select("income_month, amount, currency")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("income_month", trendStart)
       .lt("income_month", nextMonthStart),
     supabase
       .from("expense_entries")
       .select("month_key, amount, currency, main_category")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("month_key", trendStart)
       .lt("month_key", nextMonthStart),
     supabase
       .from("financial_transactions")
       .select("month_key, amount, currency, type")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("month_key", trendStart)
       .lt("month_key", nextMonthStart)
       .in("type", ["saving", "investment"]),
@@ -1136,14 +1097,14 @@ export async function getDashboardPageData(requestedMonth?: string) {
       .select(
         "id, name, target_amount, current_amount, currency, target_date, priority, status, notes",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .in("status", ["active", "completed"])
       .order("priority")
       .limit(4),
     supabase
       .from("monthly_plans")
       .select("id, current_version_id")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("month_key", monthStart)
       .limit(1),
     supabase
@@ -1151,42 +1112,42 @@ export async function getDashboardPageData(requestedMonth?: string) {
       .select(
         "id, version_number, essentials_percent, personal_percent, savings_percent, investment_percent, reserve_percent",
       )
-      .eq("family_id", profile.familyId),
+      .eq("family_id", householdId),
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
     supabase
       .from("accounts")
       .select("current_balance, currency")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true),
     supabase
       .from("assets")
       .select("current_value, currency")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true),
     supabase
       .from("investments")
       .select("current_value, currency")
-      .eq("family_id", profile.familyId),
+      .eq("family_id", householdId),
     supabase
       .from("liabilities")
       .select("original_amount, paid_amount, currency")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("status", "active"),
     supabase
       .from("net_worth_snapshots")
       .select("snapshot_month, net_worth_dzd")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("snapshot_month", { ascending: false })
       .limit(12),
     supabase
       .from("settings")
       .select("value")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("key", settingKeys.financialHealth)
       .maybeSingle(),
   ]);
@@ -1497,10 +1458,7 @@ export async function getDashboardPageData(requestedMonth?: string) {
 }
 
 export async function getNetWorthPageData() {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date, month, monthStart } = getAlgiersDateValues();
   const [
     accountsResult,
@@ -1513,26 +1471,26 @@ export async function getNetWorthPageData() {
     supabase
       .from("accounts")
       .select("id, name, type, currency, current_balance")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true),
     supabase
       .from("assets")
       .select("id, name, asset_type, currency, current_value")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("is_active", true),
     supabase
       .from("investments")
       .select("id, name, type, currency, current_value")
-      .eq("family_id", profile.familyId),
+      .eq("family_id", householdId),
     supabase
       .from("liabilities")
       .select("id, name, type, currency, original_amount, paid_amount, status")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .eq("status", "active"),
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
     supabase
@@ -1540,7 +1498,7 @@ export async function getNetWorthPageData() {
       .select(
         "id, snapshot_month, accounts_dzd, assets_dzd, investments_dzd, liabilities_dzd, total_assets_dzd, total_liabilities_dzd, net_worth_dzd, rates_snapshot, captured_at",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("snapshot_month", { ascending: false })
       .limit(12),
   ]);
@@ -1761,10 +1719,7 @@ export async function getReportsPageData(
     period?: string;
   },
 ) {
-  const profile = await readCurrentProfile();
-  if (!profile) return null;
-
-  const supabase = await createClient();
+  const { db: supabase, householdId } = await requireHouseholdContext();
   const { date, month: currentMonth } = getAlgiersDateValues();
   const requestedValidMonth = validSelectedMonth(requestedMonth, currentMonth);
   const selectedYear = validReportYear(requestedYear, requestedValidMonth.slice(0, 4));
@@ -1785,7 +1740,7 @@ export async function getReportsPageData(
     supabase
       .from("income_entries")
       .select("id, income_month, amount, currency, note, member_id")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("income_month", yearStart)
       .lt("income_month", nextYearStart),
     supabase
@@ -1793,7 +1748,7 @@ export async function getReportsPageData(
       .select(
         "id, transaction_date, month_key, main_category, amount, currency, note, member_id",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("month_key", yearStart)
       .lt("month_key", nextYearStart),
     supabase
@@ -1801,14 +1756,14 @@ export async function getReportsPageData(
       .select(
         "id, transaction_date, month_key, type, amount, currency, note, member_id",
       )
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .in("type", ["saving", "investment"])
       .gte("month_key", yearStart)
       .lt("month_key", nextYearStart),
     supabase
       .from("monthly_plans")
       .select("id, month_key, current_version_id")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("month_key", yearStart)
       .lt("month_key", nextYearStart),
     supabase
@@ -1816,23 +1771,23 @@ export async function getReportsPageData(
       .select(
         "id, version_number, essentials_percent, personal_percent, savings_percent, investment_percent",
       )
-      .eq("family_id", profile.familyId),
+      .eq("family_id", householdId),
     supabase
       .from("exchange_rates")
       .select("currency, rate_to_base, effective_date")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false }),
     supabase
       .from("net_worth_snapshots")
       .select("snapshot_month, net_worth_dzd")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .gte("snapshot_month", yearStart)
       .lt("snapshot_month", nextYearStart),
     supabase
       .from("profiles")
       .select("id, display_name")
-      .eq("family_id", profile.familyId)
+      .eq("family_id", householdId)
       .order("display_name"),
   ]);
   ensureNoQueryErrors(
@@ -2004,10 +1959,12 @@ export async function getReportActivityExportData({
   period?: string;
   year?: string;
 }) {
-  const profile = await readCurrentProfile();
-  if (!profile || profile.mustChangePassword) return null;
+  // The export is a Route Handler: it answers 401 rather than redirecting, so it uses
+  // the non-throwing variant and keeps its own must-change-password refusal.
+  const context = await readHouseholdContext();
+  if (!context || context.member.mustChangePassword) return null;
 
-  const supabase = await createClient();
+  const { db: supabase, householdId } = context;
   const { month: currentMonth } = getAlgiersDateValues();
   const requestedValidMonth = validSelectedMonth(month, currentMonth);
   const selectedYear = validReportYear(year, requestedValidMonth.slice(0, 4));
@@ -2019,7 +1976,7 @@ export async function getReportActivityExportData({
       supabase
         .from("income_entries")
         .select("id, income_month, amount, currency, note, member_id")
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .gte("income_month", yearStart)
         .lt("income_month", nextYearStart),
       supabase
@@ -2027,7 +1984,7 @@ export async function getReportActivityExportData({
         .select(
           "id, transaction_date, month_key, main_category, amount, currency, note, member_id",
         )
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .gte("month_key", yearStart)
         .lt("month_key", nextYearStart),
       supabase
@@ -2035,14 +1992,11 @@ export async function getReportActivityExportData({
         .select(
           "id, transaction_date, month_key, type, amount, currency, note, member_id",
         )
-        .eq("family_id", profile.familyId)
+        .eq("family_id", householdId)
         .in("type", ["saving", "investment"])
         .gte("month_key", yearStart)
         .lt("month_key", nextYearStart),
-      supabase
-        .from("profiles")
-        .select("id, display_name")
-        .eq("family_id", profile.familyId),
+      supabase.from("profiles").select("id, display_name").eq("family_id", householdId),
     ],
   );
   ensureNoQueryErrors(

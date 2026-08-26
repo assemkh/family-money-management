@@ -17,8 +17,9 @@ import {
   memberPasswordResetSchema,
   memberProfileUpdateSchema,
 } from "@/lib/settings/validation";
+import { readHouseholdContext } from "@/lib/auth/household-context";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestClient } from "@/lib/supabase/server";
 
 function invalidFields(error: {
   flatten: () => { fieldErrors: Record<string, string[]> };
@@ -30,28 +31,29 @@ function invalidFields(error: {
   };
 }
 
+/**
+ * Owner-gated variant of the action context. Authorization is refused before any
+ * Household read runs, so an Owner-only mutation never touches data on its way to
+ * being refused.
+ */
 async function readOwnerContext() {
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-  if (claimsError || typeof userId !== "string") return null;
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, family_id, role, must_change_password")
-    .eq("id", userId)
-    .maybeSingle();
-
+  const context = await readHouseholdContext();
   if (
-    profileError ||
-    !profile ||
-    profile.must_change_password ||
-    profile.role !== "owner"
+    !context ||
+    context.member.mustChangePassword ||
+    context.member.role !== "owner"
   ) {
     return null;
   }
 
-  return { profile, supabase };
+  return {
+    profile: {
+      id: context.member.id,
+      family_id: context.householdId,
+      role: context.member.role,
+    },
+    supabase: context.db,
+  };
 }
 
 async function saveFamilySetting(
@@ -815,7 +817,7 @@ export async function revokeOtherSessionsAction(
 ): Promise<FinanceActionState> {
   void _previousState;
   void _formData;
-  const supabase = await createClient();
+  const supabase = await getRequestClient();
   const { data, error: userError } = await supabase.auth.getUser();
   if (userError || !data.user) {
     return { status: "error", message: "Your session expired. Sign in again." };

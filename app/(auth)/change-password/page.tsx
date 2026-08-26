@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { readCurrentProfile } from "@/lib/auth/profile";
+import { readHouseholdContext } from "@/lib/auth/household-context";
 import { readAuthState } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Change password" };
@@ -19,14 +19,14 @@ export default async function ChangePasswordPage({
 
   if (authState.status !== "authenticated") redirect("/login");
 
-  const profile = await readCurrentProfile();
+  const context = await readHouseholdContext();
 
-  if (!profile) redirect("/login");
+  if (!context) redirect("/login");
 
   return (
     <ChangePasswordForm
       recovery={params.recovery === "1"}
-      requiredChange={profile.mustChangePassword}
+      requiredChange={context.member.mustChangePassword}
     />
   );
 }

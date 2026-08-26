@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 import { getPublicEnvironment } from "@/lib/env/public";
 import { sessionCookieOptions } from "@/lib/auth/cookies";
@@ -40,3 +41,11 @@ export async function createClient(options: ServerClientOptions = {}) {
     },
   );
 }
+
+/**
+ * The request's default Supabase client. Memoized with React `cache()` so one render
+ * or one Server Action builds a single client instead of one per call site. Callers
+ * that need non-default cookie behavior, such as the login action's remember-me
+ * choice, keep constructing their own with `createClient(options)`.
+ */
+export const getRequestClient = cache(() => createClient());

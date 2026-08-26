@@ -230,6 +230,7 @@ All paths below are ignored by Git:
 - `.artifacts/auth/` — generated credentials and storage states;
 - `.artifacts/bundle/build-assets.json` and `.md` — route/font inventory;
 - `.artifacts/performance/*.json` — route/profile measurements;
+- `.artifacts/performance/shell-streaming.json` — HTML stream marker offsets (Phase 2.A);
 - `.artifacts/performance/query-plans.txt` — sanitized synthetic plans;
 - `.artifacts/screenshots/` — responsive snapshots;
 - `.artifacts/playwright/` — HTML report and failure diagnostics.
@@ -275,7 +276,16 @@ was 12ms on Monthly Plan desktop.
 Byte and request counts are therefore safe to use as regression gates. Timing values
 are not, and must be compared only within a single machine and profile.
 
-## Handoff to Phase 2.A
+## Phase 2.A revision
+
+The household request-context Module landed on 2026-08-26 and removed one Supabase
+request from every authenticated route. The recorded per-route counts above are the
+pre-2.A baseline; the current expected counts are Dashboard 15, Reports 9, Net Worth 7,
+Settings 7, Expenses 6, and Monthly Plan 6. Compare future work against these.
+
+Byte and initial-JavaScript figures are unchanged — the change is server-side only.
+
+## Handoff to Phase 2.B
 
 Phase 1 is complete. Phase 1.B produced the canonical vocabulary in
 [`CONTEXT.md`](../CONTEXT.md), three architecture decision records under
@@ -286,16 +296,20 @@ specifications for the
 [authenticated action](architecture/authenticated-action.md), and
 [domain read models](architecture/read-model-boundaries.md).
 
-Phase 2.A implements the household request-context Module. Before changing the
-protected layout, the next developer should:
+Phase 2.B extracts the domain read models. Before splitting `lib/finance/data.ts`, the
+next developer should:
 
-1. Read the three Interface specifications and ADR 0002 in full.
+1. Read [`read-model-boundaries.md`](architecture/read-model-boundaries.md) and ADR
+   0001 in full.
 2. Re-run `npm run test:phase-1a` on the target machine to establish that machine's
    own timing reference. Do not compare timings across machines.
-3. Treat the recorded per-route transferred bytes, initial JavaScript, and Supabase
-   request counts as the regression gate; treat TTFB, LCP, and CLS as directional.
-4. Re-record the dashboard's 16 Supabase requests after the context Module lands. The
-   trace shows settings read twice and two `getClaims()` calls; both should fall.
+3. Treat the per-route transferred bytes, initial JavaScript, and Supabase request
+   counts as the regression gate; treat TTFB, LCP, and CLS as directional. Phase 2.A
+   demonstrated why: a single run showed a 13ms Settings regression that a second run
+   reversed entirely.
+4. Target the dashboard's remaining duplicate `settings` read — the trace still shows
+   it twice, once for `dashboard.preferences` and once for
+   `financial_health.thresholds`. One `in (...)` read returns both.
 5. Keep the recorded accessibility and overflow ceilings falling, never rising, and
    delete each allowance in the same change that fixes it.
 

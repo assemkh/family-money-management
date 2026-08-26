@@ -3,18 +3,18 @@ import { ChevronDown, LogOut, Settings2, ShieldCheck, UserRound } from "lucide-r
 
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import type { CurrentProfile } from "@/lib/auth/profile";
+import type { HouseholdMember } from "@/lib/auth/household-context";
 import { formatFullDate, formatMonth } from "@/lib/formatting/date";
 import type { Locale } from "@/lib/i18n/config";
 import type { Messages } from "@/lib/i18n/types";
 
 type AppHeaderProps = {
   messages: Messages;
-  profile: CurrentProfile;
+  member: HouseholdMember;
   locale: Locale;
 };
 
-export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
+export function AppHeader({ locale, member, messages }: AppHeaderProps) {
   const now = new Date();
   const dateLocale = locale === "ar" ? "ar-DZ" : "en-DZ";
 
@@ -57,7 +57,7 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
                 <UserRound aria-hidden="true" className="size-3.5" />
               </span>
               <span className="hidden max-w-24 truncate sm:block">
-                {profile.displayName}
+                {member.displayName}
               </span>
               <ChevronDown
                 aria-hidden="true"
@@ -66,10 +66,10 @@ export function AppHeader({ locale, messages, profile }: AppHeaderProps) {
             </summary>
             <div className="absolute end-0 top-12 z-50 w-64 rounded-2xl border bg-popover p-2 text-popover-foreground shadow-xl">
               <div className="rounded-xl bg-muted/65 px-3 py-2.5">
-                <p className="truncate text-sm font-semibold">{profile.displayName}</p>
+                <p className="truncate text-sm font-semibold">{member.displayName}</p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  @{profile.username} ·{" "}
-                  {profile.role === "owner"
+                  @{member.username} ·{" "}
+                  {member.role === "owner"
                     ? messages.shell.roleOwner
                     : messages.shell.roleMember}
                 </p>

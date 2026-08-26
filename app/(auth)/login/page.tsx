@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { logoutAction } from "@/app/actions/auth";
 import { LoginForm } from "@/components/auth/login-form";
-import { readCurrentProfile } from "@/lib/auth/profile";
+import { readHouseholdContext } from "@/lib/auth/household-context";
 import { readAuthState } from "@/lib/auth/session";
 import { hasSupabaseEnvironment } from "@/lib/env/public";
 import { hasServerEnvironment } from "@/lib/env/server";
@@ -20,9 +20,9 @@ export default async function LoginPage() {
   const authState = await readAuthState();
 
   if (authState.status === "authenticated") {
-    const profile = await readCurrentProfile();
-    if (profile) {
-      redirect(profile.mustChangePassword ? "/change-password" : "/dashboard");
+    const context = await readHouseholdContext();
+    if (context) {
+      redirect(context.member.mustChangePassword ? "/change-password" : "/dashboard");
     }
 
     return (

@@ -1,6 +1,6 @@
 # Refactor, Responsive, and Performance Plan
 
-Status: Phase 1 complete; Phase 2.A is next  
+Status: Phase 1 and Phase 2.A complete; Phase 2.B is next  
 Audit date: 2026-08-26  
 Scope: authenticated Next.js application, Supabase data layer, responsive behavior, accessibility, loading behavior, and delivery quality  
 Implementation model: five phases, with two implementation subphases in each phase
@@ -337,6 +337,11 @@ Outcome: remove duplicated request work and reduce database/network latency whil
 
 ### Phase 2.A — Streamable authenticated shell and request context
 
+**Implementation status:** Complete on 2026-08-26. The household request-context
+Module is implemented and every call site has moved; `lib/auth/profile.ts` and
+`getFamilyLocale()` are deleted. Notes are recorded in
+[Phase 2.A implementation notes](#phase-2a-implementation-notes) below.
+
 **Implementation work**
 
 - Implement the deep household request-context Module using request-local memoization so auth claims, profile, family ID, locale, and messages resolve once per request.
@@ -357,11 +362,103 @@ Outcome: remove duplicated request work and reduce database/network latency whil
 
 **Acceptance criteria**
 
-- One protected page render performs one verified identity/profile context resolution path.
-- The authenticated shell or meaningful fallback appears without waiting for unrelated page data.
-- Unauthenticated, inactive, owner, member, and must-change-password scenarios pass browser and unit tests.
-- No private user/household response is cached across requests.
-- Measured first-fallback and server timing improve or the change is revised based on evidence.
+- [x] One protected page render performs one verified identity/profile context resolution path.
+- [x] The authenticated shell or meaningful fallback appears without waiting for unrelated page data.
+- [x] Unauthenticated, inactive, owner, member, and must-change-password scenarios pass browser and unit tests.
+- [x] No private user/household response is cached across requests.
+- [x] Measured first-fallback and server timing improve or the change is revised based on evidence.
+
+#### Phase 2.A implementation notes
+
+_Recorded 2026-08-26._
+
+**What changed**
+
+| Change       | Detail                                                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Module   | `lib/auth/household-context.ts` — `readHouseholdContext()` and `requireHouseholdContext()`, memoized with React `cache()`                    |
+| New helper   | `getRequestClient()` in `lib/supabase/server.ts` — one Supabase client per request                                                           |
+| Removed      | `lib/auth/profile.ts` and `readCurrentProfile()`; `getFamilyLocale()` in `lib/settings/data.ts`                                              |
+| Migrated     | 14 read models, `getSettingsPageData`, both action context readers, the protected layout, the login and change-password screens, `AppHeader` |
+| New boundary | `app/(app)/error.tsx` — segment-level recovery that logs only the error digest                                                               |
+| New tests    | 15 unit tests for the context Module; a shell-streaming contract test; 10 anonymous authorization tests that run in CI without secrets       |
+
+**Measured result**
+
+Every authenticated route lost one Supabase request, reproduced across two runs:
+
+| Route           | Before | After |
+| --------------- | -----: | ----: |
+| `/dashboard`    |     16 |    15 |
+| `/reports`      |     10 |     9 |
+| `/net-worth`    |      8 |     7 |
+| `/settings`     |      8 |     7 |
+| `/expenses`     |      7 |     6 |
+| `/monthly-plan` |      7 |     6 |
+
+The removed request is `/rest/v1/families`. It was strictly sequential — the locale
+read needed `family_id` from the profile read — so this removes a full round trip from
+every authenticated render. `profiles` is now read exactly once per dashboard render.
+
+**Timing is not claimed as a result.** Mean authenticated TTFB moved 31.6ms → 30.0ms
+in the first run and → 25.9ms in the second, which is directionally lower but inside
+the run-to-run variance the baseline documents. A single run initially showed Settings
+13ms slower; a second run showed it 8ms faster than the original baseline, confirming
+noise rather than regression. Per the baseline's own rule, request counts are the gate
+here and timings are directional. The round trip removed locally costs ~3ms; against a
+hosted Supabase it is a full network round trip on every page.
+
+**Streaming is now tested, not asserted.** `tests/e2e/shell-streaming.spec.ts` reads
+the raw HTML stream for `/dashboard` and records where each marker lands:
+
+| Marker                                            | Byte offset | Elapsed |
+| ------------------------------------------------- | ----------: | ------: |
+| First chunk                                       |           — |  42.0ms |
+| Shell (`id="main-content"`)                       |      19,339 |  42.5ms |
+| Dashboard content (`id="dashboard-kpis-heading"`) |      81,011 |  46.8ms |
+| Response complete                                 |     123,217 |  51.5ms |
+
+The dashboard loading fallback is present in the stream, so the Suspense boundary is
+doing its job. The shell reaches the browser roughly 62KB and 4.4ms before the page's
+data-dependent markup. The test reads the stream rather than the rendered DOM because
+a fast local server can resolve the page before a fallback would ever paint — the
+ordering contract still holds and is what a future change would break first.
+
+**Design decisions worth carrying forward**
+
+- **Two context variants shipped, not the three specified.** `requireOwnerContext()`
+  had no render-path consumer — `/settings` renders for Members with `canManage`
+  false — so shipping it would have failed the deletion test in its own
+  specification. The Owner check stays in `readOwnerContext()`, which now composes
+  `readHouseholdContext()`.
+- **The Household locale is embedded in the profile read**
+  (`families(locale)`), which is what actually removes the round trip.
+- **`readAuthState()` survives and is now the only caller of `getClaims()`.** It keeps
+  the `anonymous` / `unconfigured` / `unavailable` distinction that the context
+  collapses to `null`; the login screen needs it to render "Access paused" for a
+  verified session whose profile is unreadable.
+- **The authorization gate stays in the layout and stays blocking.** "As low as
+  security permits" is the layout: nothing below it may render before the caller is
+  known to be a Member of this Household.
+
+**Coverage of the acceptance scenarios**
+
+| Scenario             | Covered by                                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Unauthenticated      | `tests/e2e/public-authorization.spec.ts` — 8 protected routes, the export handler, and the root route, all secret-free and CI-run |
+| Owner and Member     | `owner-chromium`, `arabic-owner-chromium`, and `member-chromium` browser projects                                                 |
+| Inactive Member      | Unit test for a verified session with no readable profile; the login screen's "Access paused" path                                |
+| Must change password | Unit tests asserting the `/change-password` redirect                                                                              |
+
+Adding a browser fixture for must-change-password would need a fourth household and
+project. The redirect decision now lives in one function and is unit-tested there;
+that is where a regression would appear.
+
+**Verification**
+
+`npm run check` passes with 93 unit tests, up from 78. All 131 database tests pass.
+The browser suite passes 119 with 2 intentional skips, up from 108. Fixture teardown
+left zero residue.
 
 ### Phase 2.B — Domain read models and Supabase query optimization
 

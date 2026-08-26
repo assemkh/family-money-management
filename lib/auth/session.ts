@@ -2,7 +2,7 @@ import type { JwtPayload } from "@supabase/supabase-js";
 import { cache } from "react";
 
 import { hasSupabaseEnvironment } from "@/lib/env/public";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestClient } from "@/lib/supabase/server";
 
 export type AuthState =
   | { status: "authenticated"; claims: JwtPayload }
@@ -16,7 +16,7 @@ export const readAuthState = cache(async (): Promise<AuthState> => {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = await getRequestClient();
     const { data, error } = await supabase.auth.getClaims();
 
     if (error || !data?.claims) {
