@@ -1,85 +1,29 @@
 "use client";
 
-import {
-  ArrowLeftRight,
-  BarChart3,
-  CalendarRange,
-  CircleDollarSign,
-  Goal,
-  Gem,
-  HandCoins,
-  House,
-  Landmark,
-  LineChart,
-  ReceiptText,
-  Repeat2,
-  Settings2,
-  WalletCards,
-  type LucideIcon,
-} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrandMark } from "@/components/brand/brand-mark";
+import {
+  activeDestination,
+  destinationsInGroup,
+  navigationGroupLabels,
+  type NavigationGroup,
+} from "@/lib/navigation/catalog";
 import type { Messages } from "@/lib/i18n/types";
 
-type NavigationItem = {
-  icon: LucideIcon;
-  label: string;
-  href?: string;
-};
+const groups: readonly NavigationGroup[] = ["overview", "workspace"];
 
-type AppSidebarProps = {
-  messages: Messages;
-};
-
-export function AppSidebar({ messages }: AppSidebarProps) {
-  const primaryItems: NavigationItem[] = [
-    {
-      href: "/dashboard",
-      icon: House,
-      label: messages.navigation.dashboard,
-    },
-    {
-      href: "/monthly-plan",
-      icon: CalendarRange,
-      label: messages.navigation.monthlyPlan,
-    },
-    {
-      href: "/expenses",
-      icon: ReceiptText,
-      label: messages.navigation.expenses,
-    },
-    {
-      href: "/income",
-      icon: CircleDollarSign,
-      label: messages.navigation.income,
-    },
-    {
-      href: "/accounts",
-      icon: WalletCards,
-      label: messages.navigation.accounts,
-    },
-    { href: "/goals", icon: Goal, label: messages.navigation.goals },
-  ];
-
-  const planningItems: NavigationItem[] = [
-    { href: "/assets", icon: Gem, label: messages.navigation.assets },
-    { href: "/investments", icon: LineChart, label: messages.navigation.investments },
-    { href: "/liabilities", icon: HandCoins, label: messages.navigation.liabilities },
-    {
-      href: "/transfers",
-      icon: ArrowLeftRight,
-      label: messages.navigation.transfers,
-    },
-    { href: "/recurring", icon: Repeat2, label: messages.navigation.recurring },
-    { href: "/net-worth", icon: Landmark, label: messages.navigation.netWorth },
-    { href: "/reports", icon: BarChart3, label: messages.navigation.reports },
-    { href: "/settings", icon: Settings2, label: messages.navigation.settings },
-  ];
+/**
+ * The full 17.5rem sidebar, now shown from `shell` (1200px) rather than `lg` (1024px)
+ * so a landscape tablet keeps its content width. Below that the tablet rail takes over.
+ */
+export function AppSidebar({ messages }: { messages: Messages }) {
+  const pathname = usePathname();
+  const active = activeDestination(pathname);
 
   return (
-    <aside className="fixed inset-y-0 start-0 z-40 hidden w-[17.5rem] flex-col border-e border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar))] px-4 py-5 lg:flex">
+    <aside className="fixed inset-y-0 start-0 z-40 hidden w-[17.5rem] flex-col border-e border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar))] px-4 py-5 shell:flex">
       <div className="px-2">
         <BrandMark messages={messages} />
       </div>
@@ -88,16 +32,38 @@ export function AppSidebar({ messages }: AppSidebarProps) {
         className="mt-9 flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto pb-4"
         aria-label={messages.shell.primaryNavigation}
       >
-        <NavigationGroup
-          comingSoon={messages.navigation.comingSoon}
-          items={primaryItems}
-          label={messages.shell.overview}
-        />
-        <NavigationGroup
-          comingSoon={messages.navigation.comingSoon}
-          items={planningItems}
-          label={messages.shell.privateWorkspace}
-        />
+        {groups.map((group) => (
+          <div key={group}>
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.18em] text-[hsl(var(--sidebar-muted))]">
+              {navigationGroupLabels[group](messages)}
+            </p>
+            <ul className="space-y-1">
+              {destinationsInGroup(group).map((destination) => {
+                const isActive = active?.id === destination.id;
+                const Icon = destination.icon;
+
+                return (
+                  <li key={destination.id}>
+                    <Link
+                      href={destination.href}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-white/[0.07] hover:text-white ${
+                        isActive
+                          ? "bg-white/[0.09] text-white shadow-sm"
+                          : "text-[hsl(var(--sidebar-muted))]"
+                      }`}
+                    >
+                      <Icon aria-hidden="true" className="size-[1.1rem] shrink-0" />
+                      <span className="min-w-0 break-words">
+                        {destination.label(messages)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-3.5">
@@ -110,55 +76,5 @@ export function AppSidebar({ messages }: AppSidebarProps) {
         </p>
       </div>
     </aside>
-  );
-}
-
-function NavigationGroup({
-  comingSoon,
-  items,
-  label,
-}: {
-  comingSoon: string;
-  items: NavigationItem[];
-  label: string;
-}) {
-  const pathname = usePathname();
-
-  return (
-    <div>
-      <p className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--sidebar-muted))]">
-        {label}
-      </p>
-      <ul className="space-y-1">
-        {items.map(({ href, icon: Icon, label: itemLabel }) => (
-          <li key={itemLabel}>
-            {href ? (
-              <Link
-                href={href}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-white/[0.07] hover:text-white ${
-                  pathname === href
-                    ? "bg-white/[0.09] text-white shadow-sm"
-                    : "text-[hsl(var(--sidebar-muted))]"
-                }`}
-                aria-current={pathname === href ? "page" : undefined}
-              >
-                <Icon aria-hidden="true" className="size-[1.1rem]" />
-                {itemLabel}
-              </Link>
-            ) : (
-              <span
-                className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[hsl(var(--sidebar-muted))]"
-                aria-disabled="true"
-                title={comingSoon}
-              >
-                <Icon aria-hidden="true" className="size-[1.1rem]" />
-                <span className="flex-1">{itemLabel}</span>
-                <span className="size-1 rounded-full bg-white/15" />
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

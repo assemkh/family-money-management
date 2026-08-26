@@ -41,6 +41,10 @@ export type Messages = {
     themeSystem: string;
     primaryNavigation: string;
     mobileNavigation: string;
+    compactNavigation: string;
+    openNavigation: string;
+    closeNavigation: string;
+    allDestinations: string;
     loading: string;
     changePassword: string;
     signOutDevice: string;

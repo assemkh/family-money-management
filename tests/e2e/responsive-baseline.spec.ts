@@ -36,7 +36,7 @@ for (const width of viewportMatrix) {
       await expect(
         page.locator("main").locator("xpath=ancestor::*[@dir][1]"),
       ).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
-      await expectNoPageOverflow(page, width < 650 ? 650 : undefined);
+      await expectNoPageOverflow(page);
 
       const directory = path.join(screenshotArtifactRoot, "authenticated", locale);
       await mkdir(directory, { recursive: true });
@@ -58,6 +58,9 @@ for (const width of representativeViewports) {
       const locale = role === "arabic-owner" ? "ar" : "en";
       await page.setViewportSize({ width, height: width < 768 ? 820 : 960 });
       await page.goto(route);
+      // Phase 3.A cleared the Dashboard allowance by letting the trend card shrink.
+      // Reports and Settings still overflow from their own page content, which is the
+      // page-by-page audit in Phase 3.B; these ceilings must fall there, never rise.
       const currentBaselineMax =
         width === 375 && route === "/reports"
           ? 602

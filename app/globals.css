@@ -74,7 +74,12 @@
   }
 
   body {
-    @apply min-h-screen bg-background text-foreground antialiased;
+    /* Dynamic viewport height, so mobile browser chrome collapsing cannot leave a
+       short page or push fixed navigation over content. */
+    @apply min-h-dvh bg-background text-foreground antialiased;
+    /* A fixed bottom bar plus rubber-band scrolling lets a swipe chain to the page
+       behind it on iOS; this keeps the overscroll inside the document. */
+    overscroll-behavior-y: contain;
     background-image:
       radial-gradient(circle at 8% 2%, hsl(var(--accent) / 0.07), transparent 24rem),
       radial-gradient(circle at 94% 12%, hsl(var(--primary) / 0.06), transparent 28rem);

@@ -1,6 +1,6 @@
 # Refactor, Responsive, and Performance Plan
 
-Status: Phase 1 and Phase 2 complete; Phase 3.A is next  
+Status: Phases 1, 2, and 3.A complete; Phase 3.B is next  
 Audit date: 2026-08-26  
 Scope: authenticated Next.js application, Supabase data layer, responsive behavior, accessibility, loading behavior, and delivery quality  
 Implementation model: five phases, with two implementation subphases in each phase
@@ -595,6 +595,11 @@ Outcome: make every feature discoverable and comfortable on phones and tablets w
 
 ### Phase 3.A — Phone, tablet, and desktop navigation shell
 
+**Implementation status:** Complete on 2026-08-26. One route catalog drives all four
+navigation surfaces, the tablet mode exists, and the Accounts catch-all is replaced by
+an accessible sheet. Notes are recorded in
+[Phase 3.A implementation notes](#phase-3a-implementation-notes) below.
+
 **Implementation work**
 
 - Create one route-catalog Module that drives labels, icons, grouping, active matching, and permissions for every navigation surface.
@@ -617,11 +622,81 @@ Outcome: make every feature discoverable and comfortable on phones and tablets w
 
 **Acceptance criteria**
 
-- Every application destination is discoverable from phone, tablet, and desktop navigation.
-- No fixed navigation obscures content or focused controls, including devices with safe-area insets.
-- Keyboard and screen-reader tests cover opening, navigating, closing, and restoring focus for menus/drawers.
-- The shell has no page-level horizontal overflow across the full viewport matrix in English or Arabic.
-- Navigation labels remain readable at 200% text zoom.
+- [x] Every application destination is discoverable from phone, tablet, and desktop navigation.
+- [x] No fixed navigation obscures content or focused controls, including devices with safe-area insets.
+- [x] Keyboard and screen-reader tests cover opening, navigating, closing, and restoring focus for menus/drawers.
+- [x] The shell has no page-level horizontal overflow across the full viewport matrix in English or Arabic.
+- [x] Navigation labels remain readable at 200% text zoom.
+
+#### Phase 3.A implementation notes
+
+_Recorded 2026-08-26._
+
+**The discoverability defect is fixed.** Below `lg`, five of fourteen destinations were
+reachable. Monthly Plan, Goals, Transfers, Assets, Investments, Liabilities, Recurring,
+Net Worth, and Reports had no phone entry point at all, and the Accounts item styled
+itself active for eleven unrelated pathnames while declaring `aria-current` on one.
+All fourteen are now reachable in every shell mode, proved for both locales by
+`tests/e2e/navigation-shell.spec.ts`.
+
+**What was built**
+
+| Change           | Detail                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route catalog    | `lib/navigation/catalog.ts` — one list of fourteen destinations with path, icon, group, label resolver, and active rule                     |
+| Tablet mode      | `components/layout/tablet-rail.tsx` — 4.5rem icon rail from `md` to below `shell`, all fourteen destinations plus the sheet for full labels |
+| Navigation sheet | `components/layout/navigation-sheet.tsx` — one native `<dialog>` shared by the phone More button and the tablet rail                        |
+| Phone bar        | Accounts catch-all replaced by More; Dashboard, Expenses, Add, Income, More                                                                 |
+| Breakpoint       | Additive `shell: 1200px` in `tailwind.config.ts`; the sidebar moves off `lg`                                                                |
+| Viewport         | `min-h-dvh` on the shell and body, `overscroll-behavior-y: contain`, and safe-area insets on the bar and its content clearance              |
+
+**One predicate for active state.** `activeDestination()` returns at most one
+destination, and both the visual styling and `aria-current` derive from it. Ten unit
+tests cover the cases the old literals got wrong, including that `/net-worth-archive`
+must not light up Net Worth and that a nested path activates its parent.
+
+**The `shell` breakpoint is additive, exactly as ADR 0003 requires.** All 229 `sm:`,
+33 `lg:`, and 53 `xl:` usages keep their meaning; only the sidebar's own breakpoint
+moved. A landscape tablet at 1024px gains about 200px of content width and keeps
+compact navigation instead of a squeezed 17.5rem sidebar.
+
+**A release blocker was cleared.** The Dashboard overflowed to a 650px document at
+every width below 650px — an allowance recorded since Phase 1.A. The cause was the
+trend chart's `min-w-[36rem]`: its `overflow-x-auto` container could not contain it
+because the grid item above defaulted to `min-width: auto`. One `min-w-0` on that card
+removed the overflow, and the allowance is deleted rather than lowered.
+
+`/reports` at 602px and `/settings` at 565px still overflow from their own page
+content. Those belong to Phase 3.B's page-by-page audit; the ceilings stay recorded
+with that rationale beside them and must fall there, never rise.
+
+**Deviations from ADR 0003, recorded rather than applied silently**
+
+- **The catalog carries no `requiresOwner` field.** ADR 0003 lists permissions among
+  what the catalog drives, but no destination is Owner-only: `/settings` renders for
+  Members with `canManage` false. A field that is false for all fourteen entries is
+  dead weight, so it arrives when the first Owner-only destination does.
+- **The tablet rail is icon-only rather than a labeled drawer.** The ADR allowed
+  "compact rail or drawer"; the rail shows all fourteen destinations directly with
+  accessible names and titles, and the sheet supplies the full labels on open. A
+  labeled vertical rail of fourteen entries does not fit 768px of height.
+- **Sidebar groups are unchanged.** Keeping today's Overview and Private workspace
+  split avoids a visual regrouping that ADR 0003's identity-preservation rule does not
+  ask for.
+
+**Tests added**
+
+| Suite            | Coverage                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10 unit tests    | Catalog completeness, unique ids and hrefs, both locales, single active destination, nested routes, prefix-sibling safety                                                                                                                                                                                                    |
+| 34 browser tests | Reachability and shell overflow across five modes plus 320px, focus trap and restoration, backdrop and Escape dismissal, navigation closing the sheet, Back leaving no stale overlay, `aria-current` agreement, fixed-bar clearance, 200% text zoom, 12px label floor, 44px targets — each run for English and Arabic owners |
+
+**Verification**
+
+`npm run check` passes with 103 unit tests, up from 93. The database suite passes 139.
+The browser suite passes 163 with 2 intentional skips, up from 119. The 15
+characterization snapshots are unchanged, confirming the shell work touched no
+financial output.
 
 ### Phase 3.B — Responsive primitives and page-by-page adaptation
 

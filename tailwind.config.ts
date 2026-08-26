@@ -11,6 +11,12 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        // Additive only. The sidebar moves off `lg` because 1024px is the width the
+        // audit found squeezed; every existing sm/md/lg/xl class keeps its meaning.
+        // See docs/adr/0003-adaptive-navigation-and-breakpoints.md.
+        shell: "1200px",
+      },
       fontFamily: {
         sans: ["var(--font-body)", "var(--font-arabic)", "sans-serif"],
         display: ["var(--font-display)", "var(--font-arabic)", "serif"],

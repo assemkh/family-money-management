@@ -40,7 +40,9 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
             <span className="size-2 rounded-full bg-[hsl(var(--success))]" />
             {messages.shell.signedIn}
           </div>
-          <div className="hidden rounded-full border bg-card p-1 shadow-sm sm:block">
+          {/* ADR 0003: the theme control is reachable at every viewport, not hidden
+              below `sm` with no replacement. */}
+          <div className="rounded-full border bg-card p-0.5 shadow-sm">
             <ThemeSwitcher
               darkLabel={messages.shell.themeDark}
               label={messages.shell.theme}
@@ -50,7 +52,7 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
           </div>
           <details className="group relative">
             <summary
-              className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-full bg-primary ps-3 pe-2 text-sm font-semibold text-primary-foreground shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"
+              className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-full bg-primary ps-3 pe-2 text-sm font-semibold text-primary-foreground shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"
               aria-label={messages.shell.privateWorkspace}
             >
               <span className="grid size-6 place-items-center rounded-full bg-white/12">
@@ -76,14 +78,14 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
               </div>
               <Link
                 href="/settings"
-                className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                className="mt-1 flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
               >
                 <Settings2 aria-hidden="true" className="size-4" />
                 {messages.navigation.settings}
               </Link>
               <Link
                 href="/change-password"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
               >
                 <ShieldCheck aria-hidden="true" className="size-4" />
                 {messages.shell.changePassword}
@@ -92,7 +94,7 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
                 <input type="hidden" name="scope" value="local" />
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
                 >
                   <LogOut aria-hidden="true" className="size-4" />
                   {messages.shell.signOutDevice}
@@ -102,7 +104,7 @@ export function AppHeader({ locale, member, messages }: AppHeaderProps) {
                 <input type="hidden" name="scope" value="global" />
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
                 >
                   <LogOut aria-hidden="true" className="size-4" />
                   {messages.shell.signOutEverywhere}

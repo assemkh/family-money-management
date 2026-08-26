@@ -109,6 +109,7 @@ export default defineConfig({
         /performance-baseline\.spec\.ts/,
         /responsive-baseline\.spec\.ts/,
         /shell-streaming\.spec\.ts/,
+        /navigation-shell\.spec\.ts/,
       ],
       use: {
         ...sharedBrowser,
@@ -131,6 +132,7 @@ export default defineConfig({
         /authenticated-accessibility\.spec\.ts/,
         /locale-font-baseline\.spec\.ts/,
         /responsive-baseline\.spec\.ts/,
+        /navigation-shell\.spec\.ts/,
       ],
       use: {
         ...sharedBrowser,

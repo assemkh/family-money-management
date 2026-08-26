@@ -338,7 +338,7 @@ export default async function DashboardPage({
 
       <section className="grid gap-5 xl:grid-cols-12">
         <article
-          className={`rounded-[1.4rem] border bg-card p-5 sm:p-6 ${data.preferences.showHealth ? "xl:col-span-8" : "xl:col-span-12"}`}
+          className={`min-w-0 rounded-[1.4rem] border bg-card p-5 sm:p-6 ${data.preferences.showHealth ? "xl:col-span-8" : "xl:col-span-12"}`}
         >
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>

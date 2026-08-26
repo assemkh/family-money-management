@@ -149,6 +149,37 @@ two taps behind a menu, on the device where they are used most.
 implementation choice; the range and behavior contract above is what this record
 fixes. Whichever is built must keep navigation reachable without covering content.
 
+## Implementation notes
+
+_Phase 3.A, 2026-08-26._ The record is implemented. Three deviations, recorded rather
+than applied silently.
+
+**The catalog carries no `requiresOwner` field.** Decision 2 lists permissions among
+what the catalog drives, but no destination is Owner-only — `/settings` renders for
+Members with `canManage` false. A field that is false for all fourteen entries fails
+the same deletion test this document applies elsewhere, so it arrives with the first
+Owner-only destination.
+
+**The tablet mode is an icon rail, not a labeled drawer.** Decision 1 allowed either.
+The rail shows all fourteen destinations directly with accessible names and titles, and
+the shared sheet supplies the full labels on open, satisfying "full labels on open". A
+labeled vertical rail of fourteen entries does not fit 768px of height.
+
+**Sidebar groups are unchanged.** Today's Overview and Private workspace split is kept,
+because regrouping is a visual change this record's identity-preservation intent does
+not ask for.
+
+**One sheet serves both modes.** The phone More button and the tablet rail open the
+same `<dialog>`; a second component would have been the drift this record exists to
+prevent. Native `showModal()` supplies the focus trap, Escape handling, and focus
+restoration; the component adds backdrop dismissal and derives its open state from the
+route so Back can never reveal a stale overlay.
+
+**The Dashboard overflow allowance is deleted, not lowered.** It was caused by the
+trend chart's `min-w-[36rem]` escaping its `overflow-x-auto` container, because the
+grid item above defaulted to `min-width: auto`. `/reports` and `/settings` still
+overflow from page content and remain Phase 3.B's work under decision 10.
+
 ## Verification
 
 - Every catalog destination is reachable at 320, 375, 430, 768, 1024, 1280, 1440.

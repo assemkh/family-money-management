@@ -201,9 +201,10 @@ English/Arabic matrix. Generated images are ignored because they can contain the
 synthetic financial fixture; Playwright retains failure traces/screenshots under
 `.artifacts/playwright/`.
 
-Current page-level overflow allowances are explicit:
+Current page-level overflow allowances are explicit. Phase 3.A removed the Dashboard
+allowance by letting the trend card shrink; the remaining two are page content and
+belong to Phase 3.B:
 
-- Dashboard below 650px may currently reach a 650px document width.
 - Reports at 375px may currently reach 602px.
 - Settings at 375px may currently reach 565px.
 - Expenses and the representative 768/1280 views have no extra allowance.
@@ -324,8 +325,9 @@ specifications for the
 Phase 3.A rebuilds the navigation shell. Before changing any breakpoint, the next
 developer should:
 
-1. Read [ADR 0003](adr/0003-adaptive-navigation-and-breakpoints.md) in full; it fixes
-   the three shell modes and the additive `shell: 1200px` breakpoint.
+1. Read [ADR 0003](adr/0003-adaptive-navigation-and-breakpoints.md) in full. The shell
+   modes and the additive `shell: 1200px` breakpoint are already implemented; decision
+   10 is what remains.
 2. Re-run `npm run test:phase-1a` on the target machine to establish that machine's
    own timing reference. Do not compare timings across machines.
 3. Treat the per-route transferred bytes, initial JavaScript, and Supabase request

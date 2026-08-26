@@ -53,7 +53,9 @@ test("settings confirmation dialog remains accessible when modal", async ({
   );
 
   await page.goto("/settings");
-  const candidate = page.locator("dialog").first();
+  // The shell's navigation sheet is a dialog too, so scope to the settings
+  // confirmation dialogs, which are the ones nested inside a disclosure.
+  const candidate = page.locator("details dialog").first();
   const details = candidate.locator("xpath=ancestor::details[1]");
   await details.evaluate((element: HTMLDetailsElement) => {
     element.open = true;
