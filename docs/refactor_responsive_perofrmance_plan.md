@@ -161,8 +161,8 @@ Outcome: establish trustworthy baselines and stable architecture Seams before ch
 **Implementation status:** Complete on 2026-08-26. The reproducible measurements,
 known accessibility and overflow debt, privacy constraints, commands, generated
 artifacts, and continuation notes are recorded in
-[`docs/performance-baseline.md`](performance-baseline.md). Phase 1.B is the next
-implementation subphase.
+[`docs/performance-baseline.md`](performance-baseline.md). Phase 1.B's first half is
+now complete as well; its second half is the next implementation subphase.
 
 **Implementation work**
 
@@ -193,29 +193,86 @@ implementation subphase.
 
 ### Phase 1.B — Domain map, decisions, and shared Interfaces
 
+**Implementation status:** First half complete on 2026-08-26. The canonical domain
+language, the three architecture decision records, and the mutation-to-read-model
+dependency graph are written and verified. The second half — the household
+request-context Interface, the authenticated-action Interface, the domain read-model
+boundaries, and the ownership rules for shared valuation code — is the next
+implementation step. Notes are recorded in
+[Phase 1.B implementation notes](#phase-1b-implementation-notes) below.
+
 **Implementation work**
 
-- Add `CONTEXT.md` with the canonical terms Household, Member, Account, Income Entry, Expense Entry, Transfer, Savings Event, Investment Event, Monthly Plan, Net Worth Snapshot, Valuation, and Manual Exchange Rate.
-- Add architecture decision records for financial source-of-truth rules, authenticated server rendering/caching, and adaptive navigation/breakpoints.
-- Document the dependency graph from each mutation to all affected read models and routes.
-- Define the household request-context Interface and authenticated-action Interface before moving call sites.
-- Define the domain read-model boundaries and ownership rules for shared valuation/calculation code.
-- Document caching policy: request-local deduplication is permitted; private cross-request cache is forbidden unless it is household-keyed, authorization-safe, bounded, and explicitly invalidated.
+First half — domain map and decisions (complete):
+
+- [x] Add `CONTEXT.md` with the canonical terms Household, Member, Account, Income Entry, Expense Entry, Transfer, Savings Event, Investment Event, Monthly Plan, Net Worth Snapshot, Valuation, and Manual Exchange Rate.
+- [x] Add architecture decision records for financial source-of-truth rules, authenticated server rendering/caching, and adaptive navigation/breakpoints.
+- [x] Document the dependency graph from each mutation to all affected read models and routes.
+- [x] Document caching policy: request-local deduplication is permitted; private cross-request cache is forbidden unless it is household-keyed, authorization-safe, bounded, and explicitly invalidated. Recorded as ADR 0002, decisions 2 and 3.
+
+Second half — shared Interfaces (next):
+
+- [ ] Define the household request-context Interface and authenticated-action Interface before moving call sites.
+- [ ] Define the domain read-model boundaries and ownership rules for shared valuation/calculation code.
 
 **Primary files and Modules**
 
-- `CONTEXT.md`
-- `docs/adr/`
-- `docs/architecture/`
-- proposed `lib/auth/household-context.ts`
-- proposed `lib/actions/execute-household-action.ts`
+- `CONTEXT.md` — written
+- `docs/adr/` — `README.md` and records 0001, 0002, 0003 written
+- `docs/architecture/mutation-dependency-map.md` — written
+- proposed `lib/auth/household-context.ts` — second half
+- proposed `lib/actions/execute-household-action.ts` — second half
 
 **Acceptance criteria**
 
-- Each proposed Module has a named Interface, hidden Implementation responsibility, consumers, and deletion-test rationale.
-- Every financial mutation maps to Dashboard, Reports, Monthly Plan, Net Worth, and detail routes that it can affect.
-- The decisions state the RLS and cache-safety requirements explicitly.
-- No production behavior changes in this subphase.
+- Each proposed Module has a named Interface, hidden Implementation responsibility, consumers, and deletion-test rationale. — _second half_
+- [x] Every financial mutation maps to Dashboard, Reports, Monthly Plan, Net Worth, and detail routes that it can affect.
+- [x] The decisions state the RLS and cache-safety requirements explicitly.
+- [x] No production behavior changes in this subphase.
+
+#### Phase 1.B implementation notes
+
+_First half, recorded 2026-08-26._
+
+**What was delivered**
+
+| Artifact                                                                                                            | Contents                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`CONTEXT.md`](../CONTEXT.md)                                                                                       | Canonical terms for identity, money, cash flow, planning, events, derived measures, settings keys, and the permission matrix, plus the words the product does not use |
+| [`docs/adr/0001-financial-source-of-truth.md`](adr/0001-financial-source-of-truth.md)                               | Eight rules placing invariants in PostgreSQL, derivation in `lib/finance/calculations.ts`, and single ownership on stored derived state                               |
+| [`docs/adr/0002-authenticated-rendering-and-cache-safety.md`](adr/0002-authenticated-rendering-and-cache-safety.md) | Nine rules on dynamic rendering, request-local memoization, the five-condition gate on any cross-request cache, and admin-client scope                                |
+| [`docs/adr/0003-adaptive-navigation-and-breakpoints.md`](adr/0003-adaptive-navigation-and-breakpoints.md)           | Ten rules defining the three shell modes, the additive `shell: 1200px` screen, the route catalog, and the single active-state predicate                               |
+| [`docs/architecture/mutation-dependency-map.md`](architecture/mutation-dependency-map.md)                           | All 30 mutations mapped to tables, read models, and routes, with the declared-versus-actual gap analysis                                                              |
+
+**Findings that change later phases**
+
+- **Eleven of the 30 mutations under-declare their invalidation.** `/net-worth` is
+  missed by seven mutations, `/reports` by six. The widest single gap is
+  `saveExchangeRateAction`, which changes an input to nearly every DZD Valuation but
+  declares only `/accounts` and `/dashboard`.
+- **The gaps are latent, not live.** The `(app)` segment is `force-dynamic` and every
+  read awaits `cookies()`, so no authenticated route is cached; and Next.js 16
+  documents that `revalidatePath` called from a Server Function currently refreshes
+  all previously visited pages, behavior it calls temporary. Phase 4.A must land the
+  declarative invalidation map before that behavior narrows.
+- **Table-level reasoning is not sufficient.** Column- and filter-aware analysis
+  removed false gaps on seven mutations: `/goals` and `/investments` read the same
+  `financial_transactions` table under different `type` filters, `/monthly-plan` and
+  `/dashboard` read different `settings` keys, and `/income` is the only read model
+  that selects `profiles.is_active`. Phase 2.B read models must keep those filters
+  explicit at the call site.
+- **The breakpoint decision is additive.** Moving the sidebar to a new
+  `shell: 1200px` screen leaves all 229 `sm:`, 33 `lg:`, and 53 `xl:` usages
+  untouched, so Phase 3.A can change the shell without restyling 18 pages.
+- **Three read-model defects were found and deferred to Phase 2.B:** the
+  `getPortfolioPageData("investments")` branch is unreachable, `/dashboard` reads the
+  `settings` table twice, and five member option lists ignore `is_active`.
+
+**Verification**
+
+Documentation-only subphase, so no production behavior changed. `npm run check`
+(format, lint, typecheck, unit tests, production build) passes, and the tracked source
+tree is unchanged apart from the new documents.
 
 ## Phase 2 — Server critical path and finance data Modules
 
