@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { createCsv } from "@/lib/finance/csv";
-import { getReportActivityExportData } from "@/lib/finance/data";
+import { getReportActivityExportData } from "@/lib/finance/read-models/reports/page";
 
 export const dynamic = "force-dynamic";
 

@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 
 import { createRecurringAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
-import type { ExpenseCategoryOption } from "@/lib/finance/data";
+import type { ExpenseCategoryOption } from "@/lib/finance/read-models/cash-flow/expenses";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
 
 const fieldClass =

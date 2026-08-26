@@ -7,7 +7,7 @@ import { HouseholdMemberForm } from "@/components/finance/household-member-form"
 import { MoneyTotals } from "@/components/finance/money-totals";
 import { formatMonth } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
-import { getIncomePageData } from "@/lib/finance/data";
+import { getIncomePageData } from "@/lib/finance/read-models/cash-flow/income";
 
 export const metadata: Metadata = { title: "Income" };
 

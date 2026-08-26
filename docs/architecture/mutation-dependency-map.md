@@ -27,7 +27,7 @@ For each mutation: the tables and columns written, taken from
 [`app/actions/settings.ts`](../../app/actions/settings.ts), and the bodies of the
 `private.*` functions behind each RPC in `supabase/migrations/`. For each read model:
 the tables, columns, and filters read, taken from
-[`lib/finance/data.ts`](../../lib/finance/data.ts) and
+`lib/finance/data.ts` and
 [`lib/settings/data.ts`](../../lib/settings/data.ts).
 
 The join is **column- and filter-aware, not table-aware**. Three examples of why that

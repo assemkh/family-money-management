@@ -3,7 +3,7 @@ import { CalendarClock, Repeat2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { RecurringEntryForm } from "@/components/finance/recurring-entry-form";
 import { formatMoney } from "@/lib/formatting/money";
-import { getRecurringPageData } from "@/lib/finance/data";
+import { getRecurringPageData } from "@/lib/finance/read-models/planning/recurring";
 export const metadata: Metadata = { title: "Recurring" };
 export default async function RecurringPage() {
   const data = await getRecurringPageData();

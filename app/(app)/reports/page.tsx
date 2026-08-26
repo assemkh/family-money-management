@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { getReportsPageData } from "@/lib/finance/data";
+import { getReportsPageData } from "@/lib/finance/read-models/reports/page";
 import { formatMonth, formatShortDate } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
 

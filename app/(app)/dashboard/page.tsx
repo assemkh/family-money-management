@@ -32,7 +32,7 @@ import { formatMoney } from "@/lib/formatting/money";
 import {
   getDashboardPageData,
   type DashboardHealthIndicator,
-} from "@/lib/finance/data";
+} from "@/lib/finance/read-models/dashboard/page";
 
 export const metadata: Metadata = { title: "Dashboard" };
 

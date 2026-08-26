@@ -6,7 +6,7 @@ import { InvestmentEventForm } from "@/components/finance/investment-event-form"
 import { MoneyTotals } from "@/components/finance/money-totals";
 import { PortfolioEntryForm } from "@/components/finance/portfolio-entry-form";
 import { calculateGain } from "@/lib/finance/calculations";
-import { getInvestmentPageData } from "@/lib/finance/data";
+import { getInvestmentPageData } from "@/lib/finance/read-models/net-worth/portfolio";
 import { formatShortDate } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
 

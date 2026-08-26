@@ -5,7 +5,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { createTransferAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
-import type { AccountOption } from "@/lib/finance/data";
+import type { AccountOption } from "@/lib/finance/read-models/net-worth/accounts";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
 import { formatMoney } from "@/lib/formatting/money";
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { PortfolioPage } from "@/components/finance/portfolio-page";
+import { AssetsPage } from "@/components/finance/assets-page";
 export const metadata: Metadata = { title: "Assets" };
-export default function AssetsPage() {
-  return <PortfolioPage kind="assets" />;
+export default function Page() {
+  return <AssetsPage />;
 }

@@ -5,7 +5,7 @@ import { useActionState, useEffect, useRef } from "react";
 
 import { createIncomeEntryAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
-import type { IncomeSourceOption } from "@/lib/finance/data";
+import type { IncomeSourceOption } from "@/lib/finance/read-models/cash-flow/income";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
 
 const fieldClass =

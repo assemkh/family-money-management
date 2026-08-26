@@ -1,18 +1,16 @@
-import { Gem, TrendingUp } from "lucide-react";
-import { redirect } from "next/navigation";
+import { Gem } from "lucide-react";
 
 import { PortfolioEntryForm } from "@/components/finance/portfolio-entry-form";
 import { formatMoney } from "@/lib/formatting/money";
 import { calculateGain } from "@/lib/finance/calculations";
-import { getPortfolioPageData } from "@/lib/finance/data";
+import { readAssetsPage } from "@/lib/finance/read-models/net-worth/portfolio";
 import { getAlgiersDateValues } from "@/lib/formatting/date";
 
-export async function PortfolioPage({ kind }: { kind: "assets" | "investments" }) {
-  const items = await getPortfolioPageData(kind);
-  if (!items) redirect("/login");
-  const isAssets = kind === "assets";
-  const Icon = isAssets ? Gem : TrendingUp;
-  const label = isAssets ? "Asset" : "Investment";
+// Only /assets renders this. The investment branch it used to carry was unreachable:
+// /investments has its own page and read model.
+export async function AssetsPage() {
+  const items = await readAssetsPage();
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <section className="relative overflow-hidden rounded-[1.6rem] border bg-primary px-6 py-7 text-primary-foreground sm:px-9 sm:py-9">
@@ -22,13 +20,11 @@ export async function PortfolioPage({ kind }: { kind: "assets" | "investments" }
         />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-white/75">
-            <Icon className="size-3.5" aria-hidden="true" />
-            Family {kind}
+            <Gem className="size-3.5" aria-hidden="true" />
+            Family assets
           </div>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
-            {isAssets
-              ? "Value what your family owns."
-              : "Track invested capital clearly."}
+            Value what your family owns.
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
             Purchase and current values stay together so gains and losses remain
@@ -39,21 +35,18 @@ export async function PortfolioPage({ kind }: { kind: "assets" | "investments" }
       <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="surface-shadow rounded-[1.4rem] border bg-card p-5 sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-            New {label.toLowerCase()}
+            New asset
           </p>
           <h2 className="mb-6 mt-2 font-display text-2xl font-semibold">
             Record valuation
           </h2>
-          <PortfolioEntryForm
-            kind={isAssets ? "asset" : "investment"}
-            defaultDate={getAlgiersDateValues().date}
-          />
+          <PortfolioEntryForm kind="asset" defaultDate={getAlgiersDateValues().date} />
         </div>
         <div className="rounded-[1.4rem] border bg-card p-5 sm:p-6">
-          <h2 className="font-display text-2xl font-semibold">Current {kind}</h2>
+          <h2 className="font-display text-2xl font-semibold">Current assets</h2>
           {items.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-              No {kind} recorded yet.
+              No assets recorded yet.
             </div>
           ) : (
             <ul className="mt-5 grid gap-3 sm:grid-cols-2">

@@ -3,7 +3,7 @@ import type {
   DashboardBreakdownItem,
   DashboardPlanRow,
   DashboardTrendPoint,
-} from "@/lib/finance/data";
+} from "@/lib/finance/read-models/dashboard/page";
 
 const chartColors = [
   "hsl(var(--chart-1))",

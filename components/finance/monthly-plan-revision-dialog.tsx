@@ -4,7 +4,7 @@ import { PencilLine, X } from "lucide-react";
 import { useRef } from "react";
 
 import { MonthlyPlanForm } from "@/components/finance/monthly-plan-form";
-import type { MonthlyPlanAllocation } from "@/lib/finance/data";
+import type { MonthlyPlanAllocation } from "@/lib/finance/read-models/planning/monthly-plan";
 
 export function MonthlyPlanRevisionDialog({
   allocation,

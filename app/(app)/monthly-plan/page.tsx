@@ -7,7 +7,7 @@ import { MonthlyPlanRevisionDialog } from "@/components/finance/monthly-plan-rev
 import { MoneyTotals } from "@/components/finance/money-totals";
 import { formatMonth } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
-import { getMonthlyPlanPageData } from "@/lib/finance/data";
+import { getMonthlyPlanPageData } from "@/lib/finance/read-models/planning/monthly-plan";
 
 export const metadata: Metadata = { title: "Monthly plan" };
 

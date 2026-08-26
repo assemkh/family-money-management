@@ -5,7 +5,7 @@ import { useActionState } from "react";
 
 import { saveExchangeRateAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
-import type { ManualExchangeRate } from "@/lib/finance/data";
+import type { ManualExchangeRate } from "@/lib/finance/valuation/rates";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
 import type { SettingsPageCopy } from "@/lib/i18n/settings-copy";
 

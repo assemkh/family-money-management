@@ -6,7 +6,7 @@ import { ExpenseEntryForm } from "@/components/finance/expense-entry-form";
 import { MoneyTotals } from "@/components/finance/money-totals";
 import { formatShortDate } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
-import { getExpensePageData } from "@/lib/finance/data";
+import { getExpensePageData } from "@/lib/finance/read-models/cash-flow/expenses";
 
 export const metadata: Metadata = { title: "Expenses" };
 

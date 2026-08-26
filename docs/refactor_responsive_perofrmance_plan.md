@@ -1,6 +1,6 @@
 # Refactor, Responsive, and Performance Plan
 
-Status: Phase 1 and Phase 2.A complete; Phase 2.B is next  
+Status: Phase 1 and Phase 2 complete; Phase 3.A is next  
 Audit date: 2026-08-26  
 Scope: authenticated Next.js application, Supabase data layer, responsive behavior, accessibility, loading behavior, and delivery quality  
 Implementation model: five phases, with two implementation subphases in each phase
@@ -462,6 +462,10 @@ left zero residue.
 
 ### Phase 2.B — Domain read models and Supabase query optimization
 
+**Implementation status:** Complete on 2026-08-26. `lib/finance/data.ts` is deleted and
+its fourteen read models live in domain Modules behind a shared valuation seam. Notes
+are recorded in [Phase 2.B implementation notes](#phase-2b-implementation-notes) below.
+
 **Implementation work**
 
 - Extract deep cash-flow, planning, net-worth, valuation, dashboard, and reporting read-model Modules from `lib/finance/data.ts` while keeping stable page-facing return types.
@@ -485,11 +489,100 @@ left zero residue.
 
 **Acceptance criteria**
 
-- No replacement file becomes another mixed-domain monolith.
-- Dashboard request count and transferred rows decrease from the Phase 1 baseline, or a documented measurement explains why retaining a query is faster/safer.
-- Common query plans show no avoidable scans or sorts, and write performance is not degraded by speculative indexes.
-- Owner/member/non-member/anonymous database tests prove isolation for every new view or function.
-- All financial totals match snapshot fixtures before and after the refactor.
+- [x] No replacement file becomes another mixed-domain monolith.
+- [x] Dashboard request count and transferred rows decrease from the Phase 1 baseline, or a documented measurement explains why retaining a query is faster/safer.
+- [x] Common query plans show no avoidable scans or sorts, and write performance is not degraded by speculative indexes.
+- [x] Owner/member/non-member/anonymous database tests prove isolation for every new view or function.
+- [x] All financial totals match snapshot fixtures before and after the refactor.
+
+#### Phase 2.B implementation notes
+
+_Recorded 2026-08-26._
+
+**Characterization came first.** The acceptance criterion asks that financial totals
+match snapshot fixtures before and after, so the fixtures were built before any code
+moved. `scripts/characterization/seed.sql` seeds one Household with fixed identifiers
+and month-relative dates covering everything the Phase 1.A performance fixture lacks:
+two Members, three currencies with one deliberately rate-less so incomplete Valuation
+is exercised, a child category, transfers, assets, an investment with an event,
+liabilities, a recurring commitment, a savings goal with a contribution, two immutable
+plan revisions, and a captured snapshot. `npm run test:read-models` seeds it, snapshots
+all 15 page-facing read models, and tears it down.
+
+The snapshots normalize dates to month-relative tokens and collapse timestamps, so a
+committed snapshot stays valid next month. They passed unchanged after the extraction
+and after every query change — which is how the optimizations below are known to have
+altered no financial output.
+
+**What moved**
+
+`lib/finance/data.ts` — 2,026 lines, 14 read models, 28 exported types — is deleted.
+Its contents now live in three valuation and shared modules plus eleven domain
+modules. The domain modules are 39–178 lines each and single-domain; the two composed
+models, dashboard at 474 and reports at 489, span domains by design.
+
+**Query changes, with measured evidence**
+
+Plans were taken with `EXPLAIN (ANALYZE, BUFFERS)` against a scaled fixture of 6,000
+expense entries across 24 months and 242 Monthly Plan Revisions.
+
+- **An unbounded read is gone from two routes.** Dashboard and Reports each fetched
+  every `monthly_plan_versions` row for the Household and found one in memory —
+  `Seq Scan ... rows=242, Buffers: shared hit=7`, growing with every revision ever
+  saved. Both now embed the current Revision through the existing composite foreign
+  key: `Nested Loop Left Join ... rows=1, Buffers: shared hit=4`, using an
+  `Index Scan on monthly_plan_versions_id_plan_key`.
+- **The duplicate dashboard settings read is gone.** It read `settings` twice, once
+  per key. The first read must stay sequential because `trendRange` and `defaultMonth`
+  decide the fan-out's date ranges, so it now carries both keys.
+- **No new indexes are proposed.** The date-range reads already use
+  `expense_entries_family_month_idx` via bitmap index scan. The `settings` read is a
+  three-row sequential scan in one buffer, which is correct at that cardinality; an
+  index there would be speculative and would cost write performance.
+
+| Route           | Phase 1 | After 2.A | After 2.B |
+| --------------- | ------: | --------: | --------: |
+| `/dashboard`    |      16 |        15 |    **13** |
+| `/reports`      |      10 |         9 |     **8** |
+| `/net-worth`    |       8 |         7 |         7 |
+| `/settings`     |       8 |         7 |         7 |
+| `/expenses`     |       7 |         6 |         6 |
+| `/monthly-plan` |       7 |         6 |         6 |
+
+Dashboard is down 19% from the Phase 1 baseline and Reports 20%.
+
+**No new database objects.** Phase 2.B added no view, function, or index, so there is
+nothing new to grant or expose. The embed is a PostgREST query shape over an existing
+foreign key and RLS still applies to the embedded resource — but because the shape is
+new, `supabase/tests/011_plan_revision_embed_isolation.test.sql` asserts the join it
+compiles to stays Household-scoped for owner, member, non-member, and anonymous
+callers. The database suite went from 131 tests to 139.
+
+**Deliberate deferrals, recorded rather than skipped quietly**
+
+- **Dashboard and Reports were not split into summary and analysis.** The two halves
+  are not query-disjoint as written: the critical totals and the secondary trends read
+  the same income, expense, and event rows and share one rate map. Splitting today
+  would duplicate four queries or leave the second half waiting on the first. The plan
+  qualifies this with "where that enables useful streaming", so it belongs with the
+  Suspense boundaries in Phase 4.A, where the query-disjoint version can be designed
+  and measured together.
+- **`net-worth/snapshots.ts` and `read-models/registry.ts` were not created.** The
+  first would take three different projections as parameters and be longer than the
+  queries it replaced; the second has no consumer until Phase 4.A. Both fail the
+  deletion test today.
+
+**Dead code removed.** `getPortfolioPageData(kind)` had an unreachable `"investments"`
+branch — `/investments` has its own read model. It is now `readAssetsPage()`, and the
+misleading `PortfolioPage` component is `AssetsPage` with the `kind` prop gone.
+
+**Verification**
+
+`npm run check` passes with 93 unit tests and a clean production build. The database
+suite passes 139 tests across 11 files. The browser suite passes 119 with 2 intentional
+skips. The characterization suite passes 15 snapshots. Both fixture households tear
+down to zero residue, and the append-only guard on Monthly Plan Revisions is restored
+after every characterization run.
 
 ## Phase 3 — Adaptive shell and responsive design system
 

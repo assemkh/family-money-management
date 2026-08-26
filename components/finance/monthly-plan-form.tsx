@@ -6,7 +6,7 @@ import { useActionState, useMemo, useState } from "react";
 import { saveMonthlyPlanAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
-import type { MonthlyPlanAllocation } from "@/lib/finance/data";
+import type { MonthlyPlanAllocation } from "@/lib/finance/read-models/planning/monthly-plan";
 
 const allocationFields = [
   {

@@ -17,7 +17,10 @@ import { SavingsGoalForm } from "@/components/finance/savings-goal-form";
 import { SavingsGoalStatusButton } from "@/components/finance/savings-goal-status-button";
 import { formatShortDate } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
-import { getSavingsGoalsPageData, type SavingsGoal } from "@/lib/finance/data";
+import {
+  getSavingsGoalsPageData,
+  type SavingsGoal,
+} from "@/lib/finance/read-models/planning/goals";
 
 export const metadata: Metadata = { title: "Savings goals" };
 

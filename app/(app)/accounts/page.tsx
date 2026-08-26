@@ -16,7 +16,7 @@ import {
 
 import { AccountBalanceForm } from "@/components/finance/account-balance-form";
 import { ExchangeRateForm } from "@/components/finance/exchange-rate-form";
-import { getAccountsPageData } from "@/lib/finance/data";
+import { getAccountsPageData } from "@/lib/finance/read-models/net-worth/accounts";
 import { formatMoney } from "@/lib/formatting/money";
 
 export const metadata: Metadata = { title: "Accounts" };

@@ -276,16 +276,33 @@ was 12ms on Monthly Plan desktop.
 Byte and request counts are therefore safe to use as regression gates. Timing values
 are not, and must be compared only within a single machine and profile.
 
-## Phase 2.A revision
+## Phase 2 revisions
 
-The household request-context Module landed on 2026-08-26 and removed one Supabase
-request from every authenticated route. The recorded per-route counts above are the
-pre-2.A baseline; the current expected counts are Dashboard 15, Reports 9, Net Worth 7,
-Settings 7, Expenses 6, and Monthly Plan 6. Compare future work against these.
+The recorded per-route counts above are the pre-Phase-2 baseline. Two subphases have
+reduced them, both server-side only, so byte and initial-JavaScript figures are
+unchanged.
 
-Byte and initial-JavaScript figures are unchanged — the change is server-side only.
+| Route        | Phase 1 | After 2.A | After 2.B |
+| ------------ | ------: | --------: | --------: |
+| Dashboard    |      16 |        15 |        13 |
+| Reports      |      10 |         9 |         8 |
+| Net Worth    |       8 |         7 |         7 |
+| Settings     |       8 |         7 |         7 |
+| Expenses     |       7 |         6 |         6 |
+| Monthly Plan |       7 |         6 |         6 |
 
-## Handoff to Phase 2.B
+Phase 2.A removed the separate `families` read by embedding the Household locale in
+the profile read. Phase 2.B removed an unbounded `monthly_plan_versions` read from
+Dashboard and Reports, and the duplicate `settings` read from Dashboard. Compare
+future work against the 2.B column.
+
+Phase 2.B also added a second measurement surface. `npm run test:read-models` seeds a
+richer characterization Household, snapshots all 15 page-facing read models, and tears
+it down. Its 15 committed snapshots are the guard that a query change alters no
+financial total; they are independent of this performance fixture, so the byte and
+timing figures above stay comparable.
+
+## Handoff to Phase 3.A
 
 Phase 1 is complete. Phase 1.B produced the canonical vocabulary in
 [`CONTEXT.md`](../CONTEXT.md), three architecture decision records under
@@ -296,20 +313,19 @@ specifications for the
 [authenticated action](architecture/authenticated-action.md), and
 [domain read models](architecture/read-model-boundaries.md).
 
-Phase 2.B extracts the domain read models. Before splitting `lib/finance/data.ts`, the
-next developer should:
+Phase 3.A rebuilds the navigation shell. Before changing any breakpoint, the next
+developer should:
 
-1. Read [`read-model-boundaries.md`](architecture/read-model-boundaries.md) and ADR
-   0001 in full.
+1. Read [ADR 0003](adr/0003-adaptive-navigation-and-breakpoints.md) in full; it fixes
+   the three shell modes and the additive `shell: 1200px` breakpoint.
 2. Re-run `npm run test:phase-1a` on the target machine to establish that machine's
    own timing reference. Do not compare timings across machines.
 3. Treat the per-route transferred bytes, initial JavaScript, and Supabase request
    counts as the regression gate; treat TTFB, LCP, and CLS as directional. Phase 2.A
    demonstrated why: a single run showed a 13ms Settings regression that a second run
    reversed entirely.
-4. Target the dashboard's remaining duplicate `settings` read — the trace still shows
-   it twice, once for `dashboard.preferences` and once for
-   `financial_health.thresholds`. One `in (...)` read returns both.
+4. Re-run `npm run test:read-models` before and after any change to a read model. A
+   snapshot diff is the fastest signal that a query change moved a financial total.
 5. Keep the recorded accessibility and overflow ceilings falling, never rising, and
    delete each allowance in the same change that fixes it.
 

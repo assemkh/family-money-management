@@ -1,5 +1,5 @@
 import { formatMoney } from "@/lib/formatting/money";
-import type { MoneyTotal } from "@/lib/finance/data";
+import type { MoneyTotal } from "@/lib/finance/valuation/totals";
 
 export function MoneyTotals({
   emptyLabel,

@@ -8,7 +8,7 @@
 ## Context
 
 The refactor moves 2,072 lines of query and transformation code out of
-[`lib/finance/data.ts`](../../lib/finance/data.ts) into domain read models, and moves
+`lib/finance/data.ts` into domain read models, and moves
 34 Server Actions behind shared infrastructure. Both changes touch every path that
 produces a number a household will act on.
 

@@ -10,7 +10,7 @@ import {
 import { redirect } from "next/navigation";
 
 import { NetWorthSnapshotForm } from "@/components/finance/net-worth-snapshot-form";
-import { getNetWorthPageData } from "@/lib/finance/data";
+import { getNetWorthPageData } from "@/lib/finance/read-models/net-worth/page";
 import { formatMonth } from "@/lib/formatting/date";
 import { formatMoney } from "@/lib/formatting/money";
 

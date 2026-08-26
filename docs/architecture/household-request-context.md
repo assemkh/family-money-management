@@ -15,7 +15,7 @@ failure branches that are currently open-coded at 49 call sites.
 Identity is resolved along two paths that do not know about each other.
 `readAuthState()` in [`lib/auth/session.ts`](../../lib/auth/session.ts) calls
 `getClaims()`. `readCurrentProfile()` in
-[`lib/auth/profile.ts`](../../lib/auth/profile.ts) calls `getClaims()` **again**, then
+`lib/auth/profile.ts` calls `getClaims()` **again**, then
 reads `profiles`. Both are memoized with React `cache()`, so each is deduplicated
 individually — but they duplicate each other.
 
@@ -28,7 +28,7 @@ const locale = await getFamilyLocale(profile.familyId); // families
 ```
 
 Below the layout, the same preamble is repeated by every read model — 14 times in
-[`lib/finance/data.ts`](../../lib/finance/data.ts) and once in
+`lib/finance/data.ts` and once in
 [`lib/settings/data.ts`](../../lib/settings/data.ts):
 
 ```ts

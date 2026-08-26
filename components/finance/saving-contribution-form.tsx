@@ -6,7 +6,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { recordSavingContributionAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
-import type { SavingsGoal } from "@/lib/finance/data";
+import type { SavingsGoal } from "@/lib/finance/read-models/planning/goals";
 
 const fieldClass =
   "h-12 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-55";

@@ -70,7 +70,7 @@ A rate a Member enters by hand, converting one foreign currency to DZD on a date
   unique per Household, currency, and date.
 - The **effective rate** is the most recent row with `effective_date <= today`,
   resolved by `private.latest_rate_to_base()` in SQL and `latestRates()` in
-  [`lib/finance/data.ts`](lib/finance/data.ts).
+  `lib/finance/data.ts`.
 - Rates are never fetched from a network provider and never back-fill history.
 - Canonical term: **Manual Exchange Rate**.
 

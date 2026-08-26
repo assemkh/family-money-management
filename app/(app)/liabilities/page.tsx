@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { LiabilityEntryForm } from "@/components/finance/liability-entry-form";
 import { formatMoney } from "@/lib/formatting/money";
 import { calculateLiabilityRemaining } from "@/lib/finance/calculations";
-import { getLiabilitiesPageData } from "@/lib/finance/data";
+import { getLiabilitiesPageData } from "@/lib/finance/read-models/net-worth/liabilities";
 export const metadata: Metadata = { title: "Liabilities" };
 export default async function LiabilitiesPage() {
   const items = await getLiabilitiesPageData();

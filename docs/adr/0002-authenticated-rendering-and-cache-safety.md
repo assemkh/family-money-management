@@ -30,7 +30,7 @@ What is true today:
   into `force-cache`. There is no persistent cache of household data to leak from.
 - Request-local memoization is already in use and is safe: `readAuthState()` and
   `readCurrentProfile()` in [`lib/auth/session.ts`](../../lib/auth/session.ts) and
-  [`lib/auth/profile.ts`](../../lib/auth/profile.ts) are wrapped in React `cache()`,
+  `lib/auth/profile.ts` are wrapped in React `cache()`,
   which lives and dies with one request.
 - Identity is nonetheless resolved along two paths. `readAuthState()` calls
   `getClaims()`; `readCurrentProfile()` calls `getClaims()` _again_ and then reads

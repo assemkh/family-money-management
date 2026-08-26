@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:public": "playwright test --project=public-chromium",
     "test:phase-1a": "node scripts/run-phase-1a.mjs",
+    "test:read-models": "node scripts/run-characterization.mjs",
     "playwright:install": "playwright install chromium",
     "analyze:assets": "node scripts/report-build-assets.mjs",
     "analyze:bundle": "next experimental-analyze --output && npm run analyze:assets",

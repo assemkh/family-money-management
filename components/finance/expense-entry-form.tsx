@@ -5,7 +5,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { createExpenseEntryAction } from "@/app/actions/finance";
 import { FieldError, FormStatus } from "@/components/finance/form-feedback";
-import type { AccountOption, ExpenseCategoryOption } from "@/lib/finance/data";
+import type { ExpenseCategoryOption } from "@/lib/finance/read-models/cash-flow/expenses";
+import type { AccountOption } from "@/lib/finance/read-models/net-worth/accounts";
 import { initialFinanceActionState } from "@/lib/finance/action-state";
 import type { SupportedCurrency } from "@/lib/finance/validation";
 import { formatMoney } from "@/lib/formatting/money";

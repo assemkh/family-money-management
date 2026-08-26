@@ -4,7 +4,7 @@ import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 
 import { TransferEntryForm } from "@/components/finance/transfer-entry-form";
 import { formatShortDate } from "@/lib/formatting/date";
-import { getTransfersPageData } from "@/lib/finance/data";
+import { getTransfersPageData } from "@/lib/finance/read-models/cash-flow/transfers";
 import { formatMoney } from "@/lib/formatting/money";
 
 export const metadata: Metadata = { title: "Transfers" };
